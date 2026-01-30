@@ -43,7 +43,7 @@ export default async function StacksPage() {
             <Link
               key={stack.id}
               href={`/stacks/${stack.id}`}
-              className="group block bg-surface rounded-xl p-6 hover:shadow-md transition-all duration-200"
+              className="group block bg-surface rounded-xl border border-border shadow-sm p-6 hover:shadow-md transition-all duration-200 cursor-pointer"
             >
               {/* Stack icon */}
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">

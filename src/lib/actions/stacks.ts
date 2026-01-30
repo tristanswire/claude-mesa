@@ -8,6 +8,8 @@ import {
   deleteStack,
   addRecipeToStack,
   removeRecipeFromStack,
+  syncRecipeStacks,
+  listStacks,
 } from "@/lib/db/stacks";
 
 export type FormState = {
@@ -112,5 +114,32 @@ export async function removeRecipeFromStackAction(
 
   revalidatePath(`/recipes/${recipeId}`);
   revalidatePath(`/stacks/${stackId}`);
+  return { success: true };
+}
+
+/**
+ * Sync a recipe's stack memberships (batch add/remove).
+ */
+export async function syncRecipeStacksAction(
+  recipeId: string,
+  stackIds: string[]
+): Promise<FormState> {
+  const result = await syncRecipeStacks(recipeId, stackIds);
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  // Revalidate recipe detail and all stacks
+  revalidatePath(`/recipes/${recipeId}`);
+
+  // Get all stacks to revalidate them
+  const stacksResult = await listStacks();
+  if (stacksResult.success) {
+    for (const stack of stacksResult.data) {
+      revalidatePath(`/stacks/${stack.id}`);
+    }
+  }
+
   return { success: true };
 }

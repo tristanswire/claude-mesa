@@ -154,7 +154,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         </div>
         <button
           onClick={onDismiss}
-          className="ml-4 flex-shrink-0 rounded-md inline-flex text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="ml-4 flex-shrink-0 rounded-md inline-flex text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
         >
           <span className="sr-only">Close</span>
           <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

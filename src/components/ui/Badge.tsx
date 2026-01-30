@@ -83,7 +83,7 @@ export function Chip({
         <button
           type="button"
           onClick={onRemove}
-          className="ml-1 -mr-1 p-0.5 rounded-full hover:bg-foreground/10 focus:outline-none focus:ring-1 focus:ring-ring"
+          className="ml-1 -mr-1 p-0.5 rounded-full hover:bg-foreground/10 focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
         >
           <svg
             className="w-3.5 h-3.5"

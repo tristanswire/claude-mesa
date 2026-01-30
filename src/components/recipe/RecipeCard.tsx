@@ -27,7 +27,7 @@ export function RecipeCard({ recipe, stacks = [], href }: RecipeCardProps) {
   return (
     <Link
       href={linkHref}
-      className="group block bg-surface rounded-xl overflow-hidden hover:shadow-md transition-all duration-200"
+      className="group block bg-surface rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
     >
       {/* 16:9 Image Area */}
       <div className="relative aspect-video overflow-hidden">

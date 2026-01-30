@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecipeById } from "@/lib/db/recipes";
 import { RecipeForm } from "@/components/recipe/RecipeForm";
 import { RecipeImageUpload } from "@/components/recipe/RecipeImageUpload";
+import { DeleteRecipeSection } from "@/components/recipe/DeleteRecipeSection";
 import { updateRecipeAction } from "@/lib/actions/recipes";
 
 interface EditRecipePageProps {
@@ -53,6 +54,11 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
           action={boundAction}
           submitLabel="Save Changes"
         />
+      </div>
+
+      {/* Danger zone - Delete */}
+      <div className="mt-8">
+        <DeleteRecipeSection recipeId={id} recipeTitle={recipe.title} />
       </div>
     </div>
   );

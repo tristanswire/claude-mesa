@@ -132,9 +132,10 @@ export default function ImportRecipePage() {
       if (prepTime) formData.append("prepTimeMinutes", String(prepTime));
       if (cookTime) formData.append("cookTimeMinutes", String(cookTime));
       formData.append("sourceUrl", sourceUrl);
-      // NOTE: imageUrl is not included in form data - it will be handled
-      // separately after recipe creation if the migration has been applied.
-      // For now, imported recipe images are shown in preview but not persisted.
+      // Include imageUrl for external images from imports
+      if (imageUrl) {
+        formData.append("imageUrl", imageUrl);
+      }
 
       for (const ing of ingredients) {
         formData.append("ingredient_id", ing.id);

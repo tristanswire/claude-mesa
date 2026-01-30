@@ -50,7 +50,7 @@ export function ErrorState({
               ) : retry.onClick ? (
                 <button
                   onClick={retry.onClick}
-                  className="text-sm font-medium text-error hover:text-error/80 underline"
+                  className="text-sm font-medium text-error hover:text-error/80 underline cursor-pointer"
                 >
                   {retry.label}
                 </button>

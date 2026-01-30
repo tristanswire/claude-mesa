@@ -6,6 +6,7 @@ import {
   createRecipe,
   updateRecipe,
   deleteRecipe,
+  updateRecipeImage,
 } from "@/lib/db/recipes";
 import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
 
@@ -29,6 +30,7 @@ function parseFormData(formData: FormData): {
   prepTimeMinutes?: number;
   cookTimeMinutes?: number;
   sourceUrl?: string;
+  imageUrl?: string;
   ingredients: Ingredient[];
   instructions: InstructionStep[];
 } {
@@ -38,13 +40,13 @@ function parseFormData(formData: FormData): {
   const prepTimeStr = formData.get("prepTimeMinutes") as string;
   const cookTimeStr = formData.get("cookTimeMinutes") as string;
   const sourceUrlStr = formData.get("sourceUrl") as string;
-  // NOTE: imageUrl is not included here - it's handled separately via updateRecipeImage
-  // to avoid errors if the migration hasn't been applied yet.
+  const imageUrlStr = formData.get("imageUrl") as string;
 
   const servings = servingsStr ? parseInt(servingsStr, 10) : undefined;
   const prepTimeMinutes = prepTimeStr ? parseInt(prepTimeStr, 10) : undefined;
   const cookTimeMinutes = cookTimeStr ? parseInt(cookTimeStr, 10) : undefined;
   const sourceUrl = sourceUrlStr?.trim() || undefined;
+  const imageUrl = imageUrlStr?.trim() || undefined;
 
   // Parse ingredients from form arrays
   const ingredientIds = formData.getAll("ingredient_id") as string[];
@@ -124,6 +126,7 @@ function parseFormData(formData: FormData): {
     prepTimeMinutes,
     cookTimeMinutes,
     sourceUrl,
+    imageUrl,
     ingredients,
     instructions,
   };
@@ -145,8 +148,20 @@ export async function createRecipeAction(
     };
   }
 
+  const recipeId = result.data.id;
+
+  // Save image URL if provided (for imported recipes with external images)
+  if (payload.imageUrl) {
+    // For external images, we only store the URL (no image_path since it's not in our storage)
+    const imageResult = await updateRecipeImage(recipeId, null, payload.imageUrl);
+    if (!imageResult.success) {
+      console.error("Failed to save image URL:", imageResult.error);
+      // Don't fail the whole operation - the recipe was created successfully
+    }
+  }
+
   revalidatePath("/recipes");
-  redirect(`/recipes/${result.data.id}`);
+  redirect(`/recipes/${recipeId}`);
 }
 
 export async function updateRecipeAction(

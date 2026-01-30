@@ -42,7 +42,7 @@ export function UnitToggle({ initialUnitSystem, onUnitChange }: UnitToggleProps)
           type="button"
           onClick={() => handleChange(option.value)}
           disabled={isPending}
-          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer disabled:cursor-not-allowed ${
             unitSystem === option.value
               ? "bg-surface text-foreground shadow-sm"
               : "text-muted hover:text-foreground"

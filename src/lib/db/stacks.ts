@@ -281,6 +281,66 @@ export async function removeRecipeFromStack(
 }
 
 /**
+ * Sync a recipe's stack memberships.
+ * Sets the recipe to be in exactly the specified stacks.
+ */
+export async function syncRecipeStacks(
+  recipeId: string,
+  stackIds: string[]
+): Promise<DbResult<void>> {
+  const supabase = await createClient();
+
+  // Get current stack memberships
+  const { data: current, error: fetchError } = await supabase
+    .from("recipe_stacks")
+    .select("stack_id")
+    .eq("recipe_id", recipeId);
+
+  if (fetchError) {
+    console.error("Error fetching current stacks:", fetchError);
+    return { success: false, error: fetchError.message };
+  }
+
+  const currentIds = new Set((current || []).map((r) => r.stack_id));
+  const targetIds = new Set(stackIds);
+
+  // Determine what to add and remove
+  const toAdd = stackIds.filter((id) => !currentIds.has(id));
+  const toRemove = [...currentIds].filter((id) => !targetIds.has(id));
+
+  // Remove old memberships
+  if (toRemove.length > 0) {
+    const { error: removeError } = await supabase
+      .from("recipe_stacks")
+      .delete()
+      .eq("recipe_id", recipeId)
+      .in("stack_id", toRemove);
+
+    if (removeError) {
+      console.error("Error removing stacks:", removeError);
+      return { success: false, error: removeError.message };
+    }
+  }
+
+  // Add new memberships
+  if (toAdd.length > 0) {
+    const { error: addError } = await supabase.from("recipe_stacks").insert(
+      toAdd.map((stackId) => ({
+        recipe_id: recipeId,
+        stack_id: stackId,
+      }))
+    );
+
+    if (addError) {
+      console.error("Error adding stacks:", addError);
+      return { success: false, error: addError.message };
+    }
+  }
+
+  return { success: true, data: undefined };
+}
+
+/**
  * Get stacks that contain a specific recipe.
  */
 export async function getStacksForRecipe(

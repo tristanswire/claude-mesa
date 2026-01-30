@@ -70,7 +70,7 @@ export function Alert({
             <button
               type="button"
               onClick={onDismiss}
-              className="inline-flex rounded-md p-1.5 hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-ring"
+              className="inline-flex rounded-md p-1.5 hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
             >
               <span className="sr-only">Dismiss</span>
               <svg

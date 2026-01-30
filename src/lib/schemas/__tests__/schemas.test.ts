@@ -200,11 +200,27 @@ describe("InstructionStepSchema", () => {
       refs: [
         {
           ingredientIds: ["123e4567-e89b-12d3-a456-426614174000"],
-          placement: "inline",
+          placement: "before", // invalid - only "end" and "inline" are valid
         },
       ],
     };
     expect(InstructionStepSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it("accepts inline placement with charRange", () => {
+    const valid = {
+      id: "123e4567-e89b-12d3-a456-426614174020",
+      stepNumber: 1,
+      text: "Add the flour",
+      refs: [
+        {
+          ingredientIds: ["123e4567-e89b-12d3-a456-426614174000"],
+          placement: "inline",
+          charRange: { start: 8, end: 13 },
+        },
+      ],
+    };
+    expect(InstructionStepSchema.safeParse(valid).success).toBe(true);
   });
 
   it("rejects refs with empty ingredientIds array", () => {

@@ -96,9 +96,9 @@ export function TabsTrigger({
       onClick={() => setActiveTab(value)}
       className={`
         px-3 py-1.5 text-sm font-medium rounded-md
-        transition-colors
+        transition-colors cursor-pointer
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-        disabled:opacity-50 disabled:pointer-events-none
+        disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed
         ${isActive
           ? "bg-surface text-foreground shadow-sm"
           : "text-muted hover:text-foreground"
@@ -171,7 +171,7 @@ export function SegmentedControl({
           onClick={() => onChange(option.value)}
           className={`
             ${sizeClasses[size]} font-medium rounded-md
-            transition-colors
+            transition-colors cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
             ${value === option.value
               ? "bg-surface text-foreground shadow-sm"

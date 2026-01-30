@@ -9,13 +9,11 @@ import type { UnitSystem } from "@/lib/units";
 import { formatIngredient } from "@/lib/units";
 import { renderInstructions } from "@/lib/render";
 import { UnitToggle } from "./UnitToggle";
-import { DeleteRecipeButton } from "./DeleteRecipeButton";
-import { RecipeStacks } from "./RecipeStacks";
-import { RecipeExportShare } from "./RecipeExportShare";
+import { StacksModal } from "./StacksModal";
+import { RecipeHeaderActions } from "./RecipeHeaderActions";
 import { RecipePlaceholderImage } from "./RecipePlaceholderImage";
 import { StepCard } from "./StepCard";
 import { Button } from "@/components/ui/Button";
-import { Chip } from "@/components/ui/Badge";
 
 interface RecipeDetailViewProps {
   recipe: Recipe;
@@ -35,6 +33,7 @@ export function RecipeDetailView({
   initialShareId,
 }: RecipeDetailViewProps) {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(initialUnitSystem);
+  const [isStacksModalOpen, setIsStacksModalOpen] = useState(false);
 
   // Render instructions with inline callouts
   const renderedInstructions = renderInstructions(
@@ -56,29 +55,106 @@ export function RecipeDetailView({
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Back link */}
-      <Link
-        href="/recipes"
-        className="inline-flex items-center gap-1 text-sm text-muted hover:text-primary mb-6 transition-colors"
-      >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+      {/* Top header: Back link + Actions */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        {/* Left: Back link */}
+        <Link
+          href="/recipes"
+          className="inline-flex items-center gap-1 text-sm text-muted hover:text-primary transition-colors flex-shrink-0"
+          aria-label="Back to recipes"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 19l-7-7 7-7"
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span className="hidden sm:inline">Back to recipes</span>
+          <span className="sm:hidden">Back</span>
+        </Link>
+
+        {/* Right: Action buttons */}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/recipes/${recipe.id}/edit`} aria-label="Edit recipe">
+              <svg
+                className="w-4 h-4 sm:mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Edit</span>
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsStacksModalOpen(true)}
+            aria-label="Manage stacks"
+          >
+            <svg
+              className="w-4 h-4 sm:mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            <span className="hidden sm:inline">Stacks</span>
+            {currentStacks.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                {currentStacks.length}
+              </span>
+            )}
+          </Button>
+          <RecipeHeaderActions
+            recipe={recipe}
+            unitSystem={unitSystem}
+            initialShareToken={initialShareToken}
+            initialShareId={initialShareId}
           />
-        </svg>
-        Back to recipes
-      </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/recipes/${recipe.id}/print`} target="_blank" aria-label="Print recipe">
+              <svg
+                className="w-4 h-4 sm:mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Print</span>
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       {/* Hero Section */}
-      <div className="bg-surface rounded-2xl overflow-hidden mb-8">
+      <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden mb-8">
         {/* Hero Image */}
         <div className="relative aspect-[21/9] overflow-hidden">
           {recipe.imageUrl ? (
@@ -112,7 +188,7 @@ export function RecipeDetailView({
         </div>
 
         {/* Meta bar */}
-        <div className="px-6 md:px-8 py-4 border-b border-border flex flex-wrap items-center justify-between gap-4">
+        <div className="px-6 md:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
             {recipe.servings && (
               <div className="flex items-center gap-2 text-muted">
@@ -194,67 +270,13 @@ export function RecipeDetailView({
             onUnitChange={setUnitSystem}
           />
         </div>
-
-        {/* Actions bar */}
-        <div className="px-6 md:px-8 py-4 flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/recipes/${recipe.id}/edit`}>
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-              Edit
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/recipes/${recipe.id}/print`} target="_blank">
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
-              </svg>
-              Print
-            </Link>
-          </Button>
-          <div className="flex-1" />
-          <DeleteRecipeButton recipeId={recipe.id} />
-        </div>
       </div>
-
-      {/* Current stacks */}
-      {currentStacks.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-8">
-          <span className="text-sm text-muted">In stacks:</span>
-          {currentStacks.map((stack) => (
-            <Chip key={stack.id} size="sm">
-              {stack.name}
-            </Chip>
-          ))}
-        </div>
-      )}
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Ingredients sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-surface rounded-xl p-6 sticky top-6">
+          <div className="bg-surface rounded-xl border border-border shadow-sm p-6 sticky top-6">
             <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-primary"
@@ -296,38 +318,40 @@ export function RecipeDetailView({
 
         {/* Instructions main content */}
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h7"
-              />
-            </svg>
-            Instructions
-            <span className="text-sm font-normal text-muted">
-              ({recipe.instructions.length} steps)
-            </span>
-          </h2>
-          {recipe.instructions.length === 0 ? (
-            <p className="text-muted text-sm">No instructions listed.</p>
-          ) : (
-            <div className="space-y-4">
-              {renderedInstructions.map((step) => (
-                <StepCard
-                  key={step.id}
-                  stepNumber={step.stepNumber}
-                  text={step.text}
+          <div className="bg-surface rounded-xl border border-border shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h7"
                 />
-              ))}
-            </div>
-          )}
+              </svg>
+              Instructions
+              <span className="text-sm font-normal text-muted">
+                ({recipe.instructions.length} steps)
+              </span>
+            </h2>
+            {recipe.instructions.length === 0 ? (
+              <p className="text-muted text-sm">No instructions listed.</p>
+            ) : (
+              <div className="space-y-4">
+                {renderedInstructions.map((step) => (
+                  <StepCard
+                    key={step.id}
+                    stepNumber={step.stepNumber}
+                    text={step.text}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -346,19 +370,13 @@ export function RecipeDetailView({
         </div>
       )}
 
-      {/* Stacks management */}
-      <RecipeStacks
+      {/* Stacks Modal */}
+      <StacksModal
         recipeId={recipe.id}
         currentStacks={currentStacks}
         allStacks={allStacks}
-      />
-
-      {/* Export & Share */}
-      <RecipeExportShare
-        recipe={recipe}
-        unitSystem={unitSystem}
-        initialShareToken={initialShareToken}
-        initialShareId={initialShareId}
+        isOpen={isStacksModalOpen}
+        onClose={() => setIsStacksModalOpen(false)}
       />
     </div>
   );

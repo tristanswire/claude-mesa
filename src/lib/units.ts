@@ -156,6 +156,69 @@ function formatMetricQuantity(
 }
 
 /**
+ * Format just the measurement (quantity + unit) for inline injection.
+ * Returns null if ingredient has no quantity.
+ *
+ * Examples:
+ *   "15 ml", "1 tsp", "100 g", "2"
+ */
+export function formatMeasurement(
+  ingredient: Ingredient,
+  unitSystem: UnitSystem
+): string | null {
+  // Handle null quantities (e.g., "salt to taste")
+  if (
+    ingredient.canonicalQuantity === null &&
+    ingredient.originalQuantity === null
+  ) {
+    return null;
+  }
+
+  // Original: use original quantity and unit
+  if (unitSystem === "original") {
+    if (ingredient.originalQuantity !== null) {
+      const unit = ingredient.originalUnit || "";
+      return `${ingredient.originalQuantity}${unit ? " " + unit : ""}`.trim();
+    }
+    return null;
+  }
+
+  // Count items: just show the number
+  if (ingredient.ingredientType === "count") {
+    const qty = ingredient.originalQuantity ?? ingredient.canonicalQuantity;
+    if (qty === null) return null;
+    return String(qty);
+  }
+
+  // Need canonical quantity for metric/imperial conversion
+  if (ingredient.canonicalQuantity === null) {
+    return null;
+  }
+
+  const qty = ingredient.canonicalQuantity;
+
+  // Metric: use the formatMetricQuantity helper (returns "15 ml" or "100 g")
+  if (unitSystem === "metric") {
+    return formatMetricQuantity(qty, ingredient.canonicalUnit, ingredient.name);
+  }
+
+  // Imperial: convert from canonical metric
+  if (unitSystem === "imperial") {
+    if (ingredient.ingredientType === "volume") {
+      const { qty: impQty, unit } = convertVolumeMlToBestImperial(qty);
+      return `${roundForDisplay(impQty)} ${unit}`;
+    }
+    if (ingredient.ingredientType === "weight") {
+      const { qty: impQty, unit } = convertWeightGToBestImperial(qty);
+      return `${roundForDisplay(impQty)} ${unit}`;
+    }
+    return roundForDisplay(qty);
+  }
+
+  return null;
+}
+
+/**
  * Format an ingredient for display based on the unit system.
  */
 export function formatIngredient(

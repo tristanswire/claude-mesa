@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { Recipe, Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
+import type { Recipe, Ingredient, InstructionStep } from "@/lib/schemas";
 import type { FormState } from "@/lib/actions/recipes";
 import { UpgradeCallout } from "@/components/ui/UpgradeCallout";
 
@@ -34,17 +34,6 @@ const emptyInstruction = (): InstructionStep => ({
   refs: [],
 });
 
-// Helper to get selected ingredient IDs from refs
-function getSelectedIngredientIds(refs: IngredientRef[]): Set<string> {
-  const ids = new Set<string>();
-  for (const ref of refs) {
-    for (const id of ref.ingredientIds) {
-      ids.add(id);
-    }
-  }
-  return ids;
-}
-
 export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
   const [state, formAction, isPending] = useActionState(action, {
     success: true,
@@ -57,33 +46,6 @@ export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
   const [instructions, setInstructions] = useState<InstructionStep[]>(
     recipe?.instructions?.length ? recipe.instructions : [emptyInstruction()]
   );
-
-  // Toggle an ingredient reference for an instruction step
-  const toggleIngredientRef = (instructionIndex: number, ingredientId: string) => {
-    setInstructions((prev) =>
-      prev.map((instruction, i) => {
-        if (i !== instructionIndex) return instruction;
-
-        const selectedIds = getSelectedIngredientIds(instruction.refs);
-
-        if (selectedIds.has(ingredientId)) {
-          // Remove the ingredient from refs
-          selectedIds.delete(ingredientId);
-        } else {
-          // Add the ingredient to refs
-          selectedIds.add(ingredientId);
-        }
-
-        // Rebuild refs array - for MVP, we use a single ref with all selected ingredients
-        const refs: IngredientRef[] =
-          selectedIds.size > 0
-            ? [{ ingredientIds: Array.from(selectedIds), placement: "end" as const }]
-            : [];
-
-        return { ...instruction, refs };
-      })
-    );
-  };
 
   const addIngredient = () => {
     setIngredients([
@@ -395,83 +357,53 @@ export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
           </p>
         )}
 
+        <p className="text-xs text-gray-500 mb-3">
+          Measurements are automatically shown when viewing recipes.
+        </p>
+
         <div className="space-y-3">
-          {instructions.map((instruction, index) => {
-            const selectedIds = getSelectedIngredientIds(instruction.refs);
-            const validIngredients = ingredients.filter((ing) => ing.name.trim());
-
-            return (
-              <div
-                key={instruction.id}
-                className="p-4 bg-gray-50 rounded-lg space-y-3"
-              >
-                <div className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-gray-500">
-                    Step {index + 1}
-                  </span>
-                  {instructions.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeInstruction(index)}
-                      className="text-sm text-red-600 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                <input
-                  type="hidden"
-                  name="instruction_id"
-                  value={instruction.id}
-                />
-
-                {/* Store refs as JSON in hidden input */}
-                <input
-                  type="hidden"
-                  name="instruction_refs"
-                  value={JSON.stringify(instruction.refs)}
-                />
-
-                <textarea
-                  name="instruction_text"
-                  rows={2}
-                  defaultValue={instruction.text}
-                  placeholder="Describe this step..."
-                  className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                />
-
-                {/* Ingredient refs selector */}
-                {validIngredients.length > 0 && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <label className="block text-xs font-medium text-gray-600 mb-2">
-                      Link ingredients (shown at end of step):
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {validIngredients.map((ing) => {
-                        const isSelected = selectedIds.has(ing.id);
-                        return (
-                          <button
-                            key={ing.id}
-                            type="button"
-                            onClick={() => toggleIngredientRef(index, ing.id)}
-                            className={`px-2 py-1 text-xs rounded-full border transition-colors ${
-                              isSelected
-                                ? "bg-blue-100 border-blue-400 text-blue-700"
-                                : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
-                            }`}
-                          >
-                            {isSelected && "✓ "}
-                            {ing.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+          {instructions.map((instruction, index) => (
+            <div
+              key={instruction.id}
+              className="p-4 bg-gray-50 rounded-lg space-y-3"
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-sm font-medium text-gray-500">
+                  Step {index + 1}
+                </span>
+                {instructions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeInstruction(index)}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
                 )}
               </div>
-            );
-          })}
+
+              <input
+                type="hidden"
+                name="instruction_id"
+                value={instruction.id}
+              />
+
+              {/* Store refs as JSON in hidden input */}
+              <input
+                type="hidden"
+                name="instruction_refs"
+                value={JSON.stringify(instruction.refs)}
+              />
+
+              <textarea
+                name="instruction_text"
+                rows={2}
+                defaultValue={instruction.text}
+                placeholder="Describe this step..."
+                className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+          ))}
         </div>
       </div>
 

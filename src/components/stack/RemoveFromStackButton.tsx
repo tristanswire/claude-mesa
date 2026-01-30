@@ -27,7 +27,7 @@ export function RemoveFromStackButton({
       type="button"
       onClick={handleRemove}
       disabled={isPending}
-      className="px-3 py-1.5 text-xs font-medium text-error bg-surface rounded-lg border border-error/30 hover:bg-error hover:text-error-foreground shadow-sm transition-colors disabled:opacity-50"
+      className="px-3 py-1.5 text-xs font-medium text-error bg-surface rounded-lg border border-error/30 hover:bg-error hover:text-error-foreground shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isPending ? "..." : "Remove"}
     </button>

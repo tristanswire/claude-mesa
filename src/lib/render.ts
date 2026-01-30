@@ -1,5 +1,5 @@
-import type { Ingredient, InstructionStep } from "@/lib/schemas";
-import { formatIngredient, type UnitSystem } from "@/lib/units";
+import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
+import { formatIngredient, formatMeasurement, type UnitSystem } from "@/lib/units";
 
 /**
  * Build a lookup map of ingredients by ID.
@@ -11,8 +11,12 @@ export function buildIngredientsById(
 }
 
 /**
- * Render an instruction step with inline ingredient callouts.
- * Appends refs with placement === 'end' as "(ingredient1, ingredient2, ...)".
+ * Render an instruction step with inline ingredient measurements.
+ *
+ * For inline placement: inserts measurement before the ingredient mention.
+ *   "heat olive oil in a pan" → "heat 15 ml olive oil in a pan"
+ *
+ * For end placement (legacy): appends as "(ingredient1, ingredient2, ...)".
  */
 export function renderInstructionStep(
   step: InstructionStep,
@@ -21,38 +25,61 @@ export function renderInstructionStep(
 ): string {
   let result = step.text;
 
-  // Collect all end-placement refs
+  // Separate inline and end refs
+  const inlineRefs = step.refs.filter(
+    (ref) => ref.placement === "inline" && ref.charRange
+  );
   const endRefs = step.refs.filter((ref) => ref.placement === "end");
 
-  if (endRefs.length === 0) {
-    return result;
-  }
+  // Process inline refs (in reverse order to preserve character positions)
+  if (inlineRefs.length > 0) {
+    // Sort by position descending so we can insert without shifting positions
+    const sortedInlineRefs = [...inlineRefs].sort(
+      (a, b) => (b.charRange?.start ?? 0) - (a.charRange?.start ?? 0)
+    );
 
-  // Gather all ingredient IDs from end refs
-  const allIngredientIds: string[] = [];
-  for (const ref of endRefs) {
-    allIngredientIds.push(...ref.ingredientIds);
-  }
+    for (const ref of sortedInlineRefs) {
+      if (!ref.charRange || ref.ingredientIds.length === 0) continue;
 
-  // Format each ingredient, skipping missing ones
-  const formattedIngredients: string[] = [];
-  for (const id of allIngredientIds) {
-    const ingredient = ingredientsById.get(id);
-    if (ingredient) {
-      formattedIngredients.push(formatIngredient(ingredient, unitSystem));
+      const ingredientId = ref.ingredientIds[0];
+      const ingredient = ingredientsById.get(ingredientId);
+      if (!ingredient) continue;
+
+      // Format just the measurement (quantity + unit)
+      const measurement = formatMeasurement(ingredient, unitSystem);
+      if (!measurement) continue;
+
+      // Insert measurement before the ingredient mention
+      const { start } = ref.charRange;
+      result = result.slice(0, start) + measurement + " " + result.slice(start);
     }
   }
 
-  // Append formatted ingredients in parentheses if any
-  if (formattedIngredients.length > 0) {
-    result += ` (${formattedIngredients.join(", ")})`;
+  // Process end refs (legacy behavior)
+  if (endRefs.length > 0) {
+    const allIngredientIds: string[] = [];
+    for (const ref of endRefs) {
+      allIngredientIds.push(...ref.ingredientIds);
+    }
+
+    const formattedIngredients: string[] = [];
+    for (const id of allIngredientIds) {
+      const ingredient = ingredientsById.get(id);
+      if (ingredient) {
+        formattedIngredients.push(formatIngredient(ingredient, unitSystem));
+      }
+    }
+
+    if (formattedIngredients.length > 0) {
+      result += ` (${formattedIngredients.join(", ")})`;
+    }
   }
 
   return result;
 }
 
 /**
- * Render all instruction steps with inline callouts.
+ * Render all instruction steps with inline measurements.
  */
 export function renderInstructions(
   instructions: InstructionStep[],

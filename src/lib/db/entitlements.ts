@@ -38,14 +38,7 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
   // Get current user
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
-
-  console.log("[getEntitlementsForUser] Auth result:", {
-    hasUser: !!user,
-    userId: user?.id,
-    authError: authError?.message,
-  });
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -58,12 +51,6 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  console.log("[getEntitlementsForUser] Query result:", {
-    hasData: !!data,
-    data,
-    error: error ? { code: error.code, message: error.message, details: error.details } : null,
-  });
-
   if (error) {
     console.error("Error fetching entitlements from user_preferences:", error);
     return { success: false, error: error.message };
@@ -71,8 +58,6 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
 
   // If no data found, upsert defaults and return them
   if (!data) {
-    console.log("[getEntitlementsForUser] No data found, upserting defaults for user:", user.id);
-
     const { data: upsertedData, error: upsertError } = await supabase
       .from("user_preferences")
       .upsert({
