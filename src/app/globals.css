@@ -1,26 +1,286 @@
 @import "tailwindcss";
 
+/* ============================================================
+   MESA DESIGN SYSTEM - Theme Tokens
+   Brand: Warm rustic / cozy cookbook
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background - warm off-white (paper vibe) */
+  --background: 48 30% 98%;
+  --surface: 0 0% 100%;
+  --surface-2: 40 20% 96%;
+
+  /* Text - espresso (warm charcoal) */
+  --foreground: 30 20% 18%;
+  --muted: 30 10% 45%;
+  --muted-foreground: 30 10% 45%;
+
+  /* Border */
+  --border: 35 15% 88%;
+  --input: 35 15% 88%;
+
+  /* Primary - terracotta */
+  --primary: 16 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 16 60% 42%;
+  --primary-subtle: 16 40% 94%;
+
+  /* Accent - slate/teal (reserved for premium) */
+  --accent: 185 35% 40%;
+  --accent-foreground: 0 0% 100%;
+  --accent-subtle: 185 25% 92%;
+
+  /* System colors - muted + warm */
+  --success: 145 45% 38%;
+  --success-foreground: 0 0% 100%;
+  --success-subtle: 145 30% 94%;
+
+  --warning: 38 85% 50%;
+  --warning-foreground: 30 20% 18%;
+  --warning-subtle: 40 60% 94%;
+
+  --error: 4 60% 50%;
+  --error-foreground: 0 0% 100%;
+  --error-subtle: 4 40% 95%;
+
+  --info: 210 50% 50%;
+  --info-foreground: 0 0% 100%;
+  --info-subtle: 210 40% 95%;
+
+  /* Focus ring */
+  --ring: 16 60% 50%;
+
+  /* Radius */
+  --radius: 0.5rem;
 }
+
+/* Dark mode */
+.dark {
+  /* Background - warm dark */
+  --background: 30 15% 10%;
+  --surface: 30 12% 14%;
+  --surface-2: 30 10% 18%;
+
+  /* Text - warm light */
+  --foreground: 40 20% 92%;
+  --muted: 30 10% 55%;
+  --muted-foreground: 30 10% 55%;
+
+  /* Border */
+  --border: 30 10% 22%;
+  --input: 30 10% 22%;
+
+  /* Primary - terracotta (adjusted for dark) */
+  --primary: 16 55% 55%;
+  --primary-foreground: 30 20% 10%;
+  --primary-hover: 16 55% 62%;
+  --primary-subtle: 16 30% 20%;
+
+  /* Accent - slate/teal */
+  --accent: 185 40% 50%;
+  --accent-foreground: 30 15% 10%;
+  --accent-subtle: 185 20% 18%;
+
+  /* System colors - adjusted for dark */
+  --success: 145 45% 45%;
+  --success-foreground: 30 15% 10%;
+  --success-subtle: 145 20% 18%;
+
+  --warning: 38 75% 55%;
+  --warning-foreground: 30 15% 10%;
+  --warning-subtle: 40 30% 18%;
+
+  --error: 4 55% 55%;
+  --error-foreground: 30 15% 10%;
+  --error-subtle: 4 25% 18%;
+
+  --info: 210 50% 55%;
+  --info-foreground: 30 15% 10%;
+  --info-subtle: 210 25% 18%;
+
+  /* Focus ring */
+  --ring: 16 55% 55%;
+}
+
+/* ============================================================
+   Tailwind Theme Integration
+   ============================================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-surface: hsl(var(--surface));
+  --color-surface-2: hsl(var(--surface-2));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-hover: hsl(var(--primary-hover));
+  --color-primary-subtle: hsl(var(--primary-subtle));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-subtle: hsl(var(--accent-subtle));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-subtle: hsl(var(--success-subtle));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-warning-subtle: hsl(var(--warning-subtle));
+
+  --color-error: hsl(var(--error));
+  --color-error-foreground: hsl(var(--error-foreground));
+  --color-error-subtle: hsl(var(--error-subtle));
+
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+  --color-info-subtle: hsl(var(--info-subtle));
+
+  --color-ring: hsl(var(--ring));
+
+  --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-geist-mono);
+
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.25rem);
+  --radius-xl: calc(var(--radius) + 0.5rem);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+/* Typography scale - cozy cookbook style */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  /* Note: No explicit color - inherits from parent or uses Tailwind classes */
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: hsl(var(--primary-subtle));
+  color: hsl(var(--foreground));
+}
+
+/* Links default to primary/terracotta - only for inline text links */
+a:not(.group):not([class*="block"]):not([class*="flex"]):not([class*="grid"]):not([class*="bg-"]) {
+  color: hsl(var(--primary));
+}
+
+a:not(.group):not([class*="block"]):not([class*="flex"]):not([class*="grid"]):not([class*="bg-"]):hover {
+  color: hsl(var(--primary-hover));
+}
+
+/* Override link color when used inside buttons (asChild pattern) */
+.bg-primary a,
+a.bg-primary {
+  color: hsl(var(--primary-foreground));
+}
+
+.bg-primary a:hover,
+a.bg-primary:hover {
+  color: hsl(var(--primary-foreground));
+}
+
+/* ============================================================
+   Toast slide-in animation
+   ============================================================ */
+
+@keyframes slide-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* ============================================================
+   Print styles
+   ============================================================ */
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  nav,
+  aside,
+  .sidebar,
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 1in 0.75in;
+    size: letter;
+  }
+
+  .print-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  li, p {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
