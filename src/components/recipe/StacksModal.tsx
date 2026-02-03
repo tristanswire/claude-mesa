@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import type { Stack } from "@/lib/db/stacks";
 import { syncRecipeStacksAction } from "@/lib/actions/stacks";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 interface StacksModalProps {
   recipeId: string;
@@ -122,14 +123,14 @@ export function StacksModal({
               {allStacks.map((stack) => (
                 <label
                   key={stack.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-2 cursor-pointer transition-colors"
+                  className={`flex items-center gap-3 p-3 rounded-lg hover:bg-surface-2 transition-colors ${
+                    isPending ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedIds.has(stack.id)}
                     onChange={() => handleToggle(stack.id)}
                     disabled={isPending}
-                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-foreground truncate">

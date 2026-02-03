@@ -1,7 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Recipe } from "@/lib/schemas";
-import { RecipePlaceholderImage } from "./RecipePlaceholderImage";
+import { RecipeCardImage } from "./RecipeImage";
 import { Chip } from "@/components/ui/Badge";
 
 interface RecipeCardProps {
@@ -29,27 +28,11 @@ export function RecipeCard({ recipe, stacks = [], href }: RecipeCardProps) {
       href={linkHref}
       className="group block bg-surface rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
     >
-      {/* 16:9 Image Area */}
-      <div className="relative aspect-video overflow-hidden">
-        {recipe.imageUrl ? (
-          <Image
-            src={recipe.imageUrl}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <RecipePlaceholderImage
-            title={recipe.title}
-            className="absolute inset-0 w-full h-full"
-          />
-        )}
+      {/* 16:9 Image Area with error handling */}
+      <RecipeCardImage src={recipe.imageUrl} title={recipe.title} />
 
-        {/* Gradient overlay for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-        {/* Title overlay on image */}
+      {/* Title overlay on image */}
+      <div className="absolute top-0 left-0 right-0 aspect-video pointer-events-none">
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <h3 className="text-lg font-semibold text-white line-clamp-2 group-hover:text-white/90 transition-colors">
             {recipe.title}

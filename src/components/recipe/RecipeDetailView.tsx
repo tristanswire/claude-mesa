@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import type { Recipe } from "@/lib/schemas";
 import type { Stack } from "@/lib/db/stacks";
 import type { UnitSystem } from "@/lib/units";
@@ -11,9 +10,10 @@ import { renderInstructions } from "@/lib/render";
 import { UnitToggle } from "./UnitToggle";
 import { StacksModal } from "./StacksModal";
 import { RecipeHeaderActions } from "./RecipeHeaderActions";
-import { RecipePlaceholderImage } from "./RecipePlaceholderImage";
+import { RecipeHeroImage } from "./RecipeImage";
 import { StepCard } from "./StepCard";
 import { Button } from "@/components/ui/Button";
+import { RECIPE_PAGE_MAX_WIDTH } from "./RecipePageContainer";
 
 interface RecipeDetailViewProps {
   recipe: Recipe;
@@ -54,7 +54,7 @@ export function RecipeDetailView({
     (recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className={RECIPE_PAGE_MAX_WIDTH}>
       {/* Top header: Back link + Actions */}
       <div className="flex items-center justify-between gap-4 mb-6">
         {/* Left: Back link */}
@@ -76,7 +76,7 @@ export function RecipeDetailView({
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          <span className="hidden sm:inline">Back to recipes</span>
+          <span className="font-semibold hidden sm:inline">Back to recipes</span>
           <span className="sm:hidden">Back</span>
         </Link>
 
@@ -154,25 +154,10 @@ export function RecipeDetailView({
       </div>
 
       {/* Hero Section */}
-      <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden mb-8">
-        {/* Hero Image */}
-        <div className="relative aspect-[21/9] overflow-hidden">
-          {recipe.imageUrl ? (
-            <Image
-              src={recipe.imageUrl}
-              alt={recipe.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 896px) 100vw, 896px"
-              priority
-            />
-          ) : (
-            <RecipePlaceholderImage
-              title={recipe.title}
-              className="absolute inset-0 w-full h-full"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+      <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden mb-4">
+        {/* Hero Image with error handling */}
+        <div className="relative">
+          <RecipeHeroImage src={recipe.imageUrl} title={recipe.title} />
 
           {/* Title overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
@@ -272,6 +257,59 @@ export function RecipeDetailView({
         </div>
       </div>
 
+      {/* Quick Actions Banner - Always visible without scrolling */}
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-4 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+              />
+            </svg>
+            {currentStacks.length > 0 ? (
+              <span>
+                In {currentStacks.length} stack{currentStacks.length !== 1 ? "s" : ""}:{" "}
+                <span className="text-foreground font-medium">
+                  {currentStacks.map((s) => s.name).join(", ")}
+                </span>
+              </span>
+            ) : (
+              <span>Organize this recipe by adding it to a stack</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={currentStacks.length > 0 ? "outline" : "primary"}
+              size="sm"
+              onClick={() => setIsStacksModalOpen(true)}
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+              {currentStacks.length > 0 ? "Manage Stacks" : "Add to Stack"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Ingredients sidebar */}
@@ -352,23 +390,22 @@ export function RecipeDetailView({
               </div>
             )}
           </div>
+          {/* Source URL */}
+          {recipe.sourceUrl && (
+            <div className="mt-8 p-4 bg-surface-2 rounded-xl text-sm">
+              <span className="text-muted">Source: </span>
+              <a
+                href={recipe.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline break-all"
+              >
+                {recipe.sourceUrl}
+              </a>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Source URL */}
-      {recipe.sourceUrl && (
-        <div className="mt-8 p-4 bg-surface-2 rounded-xl text-sm">
-          <span className="text-muted">Source: </span>
-          <a
-            href={recipe.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline break-all"
-          >
-            {recipe.sourceUrl}
-          </a>
-        </div>
-      )}
 
       {/* Stacks Modal */}
       <StacksModal

@@ -8,6 +8,7 @@ import {
   deleteRecipe,
   updateRecipeImage,
 } from "@/lib/db/recipes";
+import { canCreateRecipe } from "@/lib/db/entitlements";
 import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
 
 export type FormState = {
@@ -136,6 +137,15 @@ export async function createRecipeAction(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
+  // Check if user can create more recipes (plan limits)
+  const limitCheck = await canCreateRecipe();
+  if (!limitCheck.allowed) {
+    return {
+      success: false,
+      error: limitCheck.reason || "You cannot create more recipes at this time.",
+    };
+  }
+
   const payload = parseFormData(formData);
 
   const result = await createRecipe(payload);

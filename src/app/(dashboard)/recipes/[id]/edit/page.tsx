@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { getRecipeById } from "@/lib/db/recipes";
 import { RecipeForm } from "@/components/recipe/RecipeForm";
 import { RecipeImageUpload } from "@/components/recipe/RecipeImageUpload";
-import { DeleteRecipeSection } from "@/components/recipe/DeleteRecipeSection";
+import { DeleteRecipeButton } from "@/components/recipe/DeleteRecipeButton";
 import { updateRecipeAction } from "@/lib/actions/recipes";
+import { Button } from "@/components/ui/Button";
+import { RECIPE_PAGE_MAX_WIDTH } from "@/components/recipe/RecipePageContainer";
 
 interface EditRecipePageProps {
   params: Promise<{ id: string }>;
@@ -19,7 +21,7 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
       notFound();
     }
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div className="bg-error-subtle border border-error/20 text-error px-4 py-3 rounded-lg">
         {result.error}
       </div>
     );
@@ -31,35 +33,55 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
   const boundAction = updateRecipeAction.bind(null, id);
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className={RECIPE_PAGE_MAX_WIDTH}>
+      {/* Top action bar - matches single recipe page layout */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        {/* Left: Back link */}
         <Link
           href={`/recipes/${id}`}
-          className="text-sm text-muted hover:text-foreground transition-colors mb-2 inline-block"
+          className="inline-flex items-center gap-1 text-sm text-muted hover:text-primary transition-colors flex-shrink-0"
+          aria-label="Back to recipe"
         >
-          &larr; Back to recipe
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span className="font-medium hidden sm:inline">Back to recipe</span>
+          <span className="sm:hidden">Back</span>
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Edit Recipe</h1>
+
+        {/* Right: Action buttons */}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <DeleteRecipeButton recipeId={id} recipeTitle={recipe.title} />
+          <Button type="submit" form="recipe-form">
+            Save Changes
+          </Button>
+        </div>
       </div>
 
-      {/* Image upload section */}
-      <div className="bg-surface rounded-xl p-6 mb-6">
-        <RecipeImageUpload recipeId={id} currentImageUrl={recipe.imageUrl} />
-      </div>
+      {/* Page title */}
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Recipe</h1>
 
-      {/* Recipe form */}
-      <div className="bg-surface rounded-xl p-6">
-        <RecipeForm
-          recipe={recipe}
-          action={boundAction}
-          submitLabel="Save Changes"
-        />
-      </div>
-
-      {/* Danger zone - Delete */}
-      <div className="mt-8">
-        <DeleteRecipeSection recipeId={id} recipeTitle={recipe.title} />
-      </div>
+      {/* Recipe form - cards are rendered inside the form component */}
+      <RecipeForm
+        recipe={recipe}
+        action={boundAction}
+        submitLabel="Save Changes"
+        formId="recipe-form"
+        hideSubmitButton
+        imageUploadSlot={
+          <RecipeImageUpload recipeId={id} currentImageUrl={recipe.imageUrl} />
+        }
+      />
     </div>
   );
 }

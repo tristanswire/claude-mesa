@@ -176,6 +176,12 @@ export function formatRecipeAsText(
 
   const lines: string[] = [];
 
+  // Image URL (if available)
+  if (recipe.imageUrl) {
+    lines.push(`Image: ${recipe.imageUrl}`);
+    lines.push("");
+  }
+
   // Title
   lines.push(recipe.title);
   lines.push("=".repeat(recipe.title.length));
@@ -213,4 +219,77 @@ export function formatRecipeAsText(
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Format recipe as HTML for rich clipboard.
+ */
+export function formatRecipeAsHtml(
+  recipe: Recipe,
+  unitSystem: UnitSystem
+): string {
+  const renderedInstructions = renderInstructions(
+    recipe.instructions,
+    recipe.ingredients,
+    unitSystem
+  );
+
+  const parts: string[] = [];
+
+  // Image (if available)
+  if (recipe.imageUrl) {
+    parts.push(`<img src="${recipe.imageUrl}" alt="${recipe.title}" style="max-width: 400px; border-radius: 8px; margin-bottom: 16px;" />`);
+  }
+
+  // Title
+  parts.push(`<h1>${escapeHtml(recipe.title)}</h1>`);
+
+  // Description
+  if (recipe.description) {
+    parts.push(`<p><em>${escapeHtml(recipe.description)}</em></p>`);
+  }
+
+  // Meta info
+  const metaParts: string[] = [];
+  if (recipe.servings) metaParts.push(`<strong>Servings:</strong> ${recipe.servings}`);
+  if (recipe.prepTimeMinutes) metaParts.push(`<strong>Prep:</strong> ${recipe.prepTimeMinutes} min`);
+  if (recipe.cookTimeMinutes) metaParts.push(`<strong>Cook:</strong> ${recipe.cookTimeMinutes} min`);
+  if (metaParts.length > 0) {
+    parts.push(`<p>${metaParts.join(" &nbsp;|&nbsp; ")}</p>`);
+  }
+
+  // Ingredients
+  parts.push("<h2>Ingredients</h2>");
+  parts.push("<ul>");
+  for (const ingredient of recipe.ingredients) {
+    parts.push(`<li>${escapeHtml(formatIngredient(ingredient, unitSystem))}</li>`);
+  }
+  parts.push("</ul>");
+
+  // Instructions
+  parts.push("<h2>Instructions</h2>");
+  parts.push("<ol>");
+  for (const step of renderedInstructions) {
+    parts.push(`<li>${escapeHtml(step.text)}</li>`);
+  }
+  parts.push("</ol>");
+
+  // Source
+  if (recipe.sourceUrl) {
+    parts.push(`<p><strong>Source:</strong> <a href="${recipe.sourceUrl}">${escapeHtml(recipe.sourceUrl)}</a></p>`);
+  }
+
+  return parts.join("\n");
+}
+
+/**
+ * Escape HTML special characters.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

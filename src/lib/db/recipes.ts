@@ -7,6 +7,7 @@ import {
 import type { Recipe, RecipePayload } from "@/lib/schemas";
 import { linkIngredientsToInstructions, allRefsEmpty } from "@/lib/import";
 import { canCreateRecipe } from "@/lib/db/entitlements";
+import { trackEventAsync } from "@/lib/analytics/events";
 
 export type DbResult<T> =
   | { success: true; data: T }
@@ -160,6 +161,14 @@ export async function createRecipe(
       details: result.details,
     };
   }
+
+  // Track event (non-blocking)
+  trackEventAsync("recipe_created", {
+    recipeId: result.data.id,
+    recipeTitle: result.data.title,
+    sourceUrl: result.data.sourceUrl,
+    importMethod: result.data.sourceUrl ? "url" : "manual",
+  });
 
   return { success: true, data: result.data };
 }

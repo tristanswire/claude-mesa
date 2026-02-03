@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Recipe } from "@/lib/schemas";
 import { parseRecipeFromDb } from "@/lib/validation/recipes";
+import { trackEventAsync } from "@/lib/analytics/events";
 
 export interface Stack {
   id: string;
@@ -120,7 +121,15 @@ export async function createStack(payload: {
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: transformStackRow(data) };
+  const stack = transformStackRow(data);
+
+  // Track event (non-blocking)
+  trackEventAsync("stack_created", {
+    stackId: stack.id,
+    stackName: stack.name,
+  });
+
+  return { success: true, data: stack };
 }
 
 /**
@@ -254,6 +263,12 @@ export async function addRecipeToStack(
     return { success: false, error: error.message };
   }
 
+  // Track event (non-blocking)
+  trackEventAsync("added_to_stack", {
+    recipeId,
+    stackId,
+  });
+
   return { success: true, data: undefined };
 }
 
@@ -276,6 +291,12 @@ export async function removeRecipeFromStack(
     console.error("Error removing recipe from stack:", error);
     return { success: false, error: error.message };
   }
+
+  // Track event (non-blocking)
+  trackEventAsync("removed_from_stack", {
+    recipeId,
+    stackId,
+  });
 
   return { success: true, data: undefined };
 }

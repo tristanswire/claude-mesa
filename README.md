@@ -47,13 +47,25 @@ Create a `.env.local` file in the root directory:
 # Required: Supabase connection
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Required: App URL (for redirects)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: Supabase service role (for admin operations)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional: Stripe billing (only if enabling paid plans)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_PLUS=price_...
 ```
 
-Get these values from your Supabase project:
+Get Supabase values from your project:
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
 2. Select your project (or create one)
 3. Go to **Settings** > **API**
 4. Copy the **Project URL** and **anon/public** key
+5. Copy the **service_role** key (keep this secret!)
 
 ### 3. Set Up Database Schema
 
@@ -103,23 +115,72 @@ Ensure your code is pushed to a GitHub repository.
 ### 2. Deploy to Vercel
 
 1. Go to [Vercel](https://vercel.com) and import your repository
-2. Configure environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. Configure environment variables (see [Environment Variables Reference](#environment-variables-reference)):
+   - `NEXT_PUBLIC_SUPABASE_URL` (required)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (required)
+   - `NEXT_PUBLIC_APP_URL` = your production URL (e.g., `https://your-app.vercel.app`)
+   - `SUPABASE_SERVICE_ROLE_KEY` (required for billing webhooks)
+   - `STRIPE_SECRET_KEY` (if billing enabled)
+   - `STRIPE_WEBHOOK_SECRET` (if billing enabled)
+   - `STRIPE_PRICE_ID_PLUS` (if billing enabled)
 3. Deploy
 
-### 3. Post-Deploy: Update Supabase Settings
+### 3. Configure Supabase Auth (Critical!)
 
-After deployment, update Supabase to allow your production URL:
+**This step is required for authentication to work in production.**
 
-1. Go to Supabase Dashboard > **Authentication** > **URL Configuration**
-2. Update **Site URL** to your Vercel URL (e.g., `https://your-app.vercel.app`)
-3. Add to **Redirect URLs**:
-   - `https://your-app.vercel.app/**`
-   - `https://your-app.vercel.app/api/auth/callback`
-4. Click **Save**
+Go to Supabase Dashboard > **Authentication** > **URL Configuration**:
 
-### 4. Verify Deployment
+#### Site URL
+Set to your **production domain**:
+```
+https://your-app.vercel.app
+```
+
+#### Redirect URLs
+Add **all** URLs where users might authenticate from:
+
+```
+# Production
+https://your-app.vercel.app/**
+
+# Vercel Preview Deployments (if using)
+https://*.vercel.app/**
+
+# Local development
+http://localhost:3000/**
+```
+
+> **Why the wildcard?** Vercel creates unique URLs for each preview deployment (e.g., `https://your-app-abc123.vercel.app`). The `*.vercel.app/**` pattern allows all preview deployments to work.
+
+Click **Save** after adding all URLs.
+
+### 4. Supabase Auth Configuration Checklist
+
+Use this checklist to verify your auth setup:
+
+- [ ] **Site URL** is set to production domain (not localhost)
+- [ ] **Redirect URLs** includes production domain with `/**` wildcard
+- [ ] **Redirect URLs** includes preview pattern `https://*.vercel.app/**` (if using previews)
+- [ ] **Redirect URLs** includes `http://localhost:3000/**` (for local dev)
+- [ ] Email provider is enabled in **Authentication** > **Providers**
+- [ ] (Optional) Email confirmation disabled for faster testing
+
+### 5. Set Up Stripe Webhook (If Billing Enabled)
+
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com) > **Developers** > **Webhooks**
+2. Click **Add endpoint**
+3. Set endpoint URL: `https://your-app.vercel.app/api/stripe/webhook`
+4. Select events:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_failed`
+   - `invoice.payment_succeeded`
+5. Copy the **Signing secret** and add it to Vercel as `STRIPE_WEBHOOK_SECRET`
+
+### 6. Verify Deployment
 
 Check the health endpoint:
 ```bash
@@ -139,14 +200,72 @@ Should return:
 }
 ```
 
+### 7. Test Authentication Flow
+
+1. Visit your production URL
+2. Click **Sign Up** and create an account
+3. Check email for confirmation (if enabled)
+4. Verify you can log in and access `/recipes`
+
+If auth fails, check:
+- Supabase Site URL matches your domain
+- Redirect URLs include your domain
+- Browser console for errors
+
 ---
 
 ## Environment Variables Reference
 
+### Public Variables (Client + Server)
+
+These are embedded in the client bundle and visible to users.
+
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Your Supabase anonymous/public key |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL (e.g., `https://xxx.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your app URL (e.g., `http://localhost:3000` or `https://your-app.vercel.app`) |
+
+### Server-Only Variables
+
+These are never exposed to the client. Keep them secret!
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_SERVICE_ROLE_KEY` | For billing | Supabase service role key (bypasses RLS) |
+| `STRIPE_SECRET_KEY` | For billing | Stripe secret key (starts with `sk_`) |
+| `STRIPE_WEBHOOK_SECRET` | For billing | Stripe webhook signing secret (starts with `whsec_`) |
+| `STRIPE_PRICE_ID_PLUS` | For billing | Stripe Price ID for Plus plan (starts with `price_`) |
+
+### Environment Variable Validation
+
+The app validates environment variables at startup using Zod schemas in `src/lib/env.ts`.
+
+If required variables are missing, you'll see a clear error:
+```
+Missing or invalid public environment variables:
+  NEXT_PUBLIC_SUPABASE_URL: Required
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: Required
+
+See README.md for required environment variables.
+```
+
+### Example `.env.local` (Development)
+
+```bash
+# Supabase (required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Supabase service role (for admin operations)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Stripe (only if testing billing)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_PLUS=price_...
+```
 
 ---
 
@@ -196,10 +315,12 @@ src/
 │   └── ui/               # Reusable UI (Loading, Empty, Error states)
 └── lib/
     ├── actions/          # Server actions (recipes, stacks, import)
+    ├── analytics/        # Event tracking (non-blocking)
     ├── db/               # Database access functions
     ├── import/           # Import pipeline (fetcher, jsonld, simplifier)
     ├── schemas/          # Zod validation schemas
     ├── supabase/         # Supabase client configuration
+    ├── env.ts            # Environment variable validation (Zod)
     ├── logger.ts         # Server-side logging
     ├── rate-limit.ts     # Rate limiting utility
     ├── render.ts         # Instruction rendering
@@ -286,6 +407,13 @@ For production at scale, consider using Redis or Upstash rate limiting.
 ---
 
 ## Troubleshooting
+
+### Environment variable errors at startup
+If you see "Missing or invalid environment variables":
+1. Check that `.env.local` exists in the project root
+2. Verify all required variables are set (see [Environment Variables Reference](#environment-variables-reference))
+3. Restart the dev server after changing `.env.local`
+4. For Vercel, verify env vars in Project Settings > Environment Variables
 
 ### "Invalid URL" error during import
 - Ensure the URL starts with `http://` or `https://`
@@ -392,6 +520,13 @@ ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'recipe-images');
 ```
+
+---
+
+## Documentation
+
+- [Launch Checklist](docs/launch-checklist.md) - Pre-launch verification (RLS, env vars, auth)
+- [Smoke Test](docs/smoke-test.md) - Manual testing guide
 
 ---
 

@@ -12,7 +12,7 @@ interface ThemeSelectorProps {
 const themeOptions = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "system", label: "Auto" },
+  { value: "system", label: "System" },
 ];
 
 export function ThemeSelector({ initialValue }: ThemeSelectorProps) {

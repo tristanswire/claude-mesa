@@ -6,15 +6,41 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Plan = "free" | "plus" | "ai";
 
+export type PlanStatus = "active" | "trialing" | "past_due" | "canceled" | "inactive";
+
 export interface UserEntitlements {
   userId: string;
   plan: Plan;
+  planStatus: PlanStatus | null;
   recipeLimit: number | null;
   aiActionsLimit: number | null;
   aiActionsUsed: number;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  currentPeriodEnd: Date | null;
+  pastDueSince: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Plan defaults
+export const PLAN_LIMITS = {
+  free: {
+    recipeLimit: 25,
+    aiActionsLimit: 20,
+  },
+  plus: {
+    recipeLimit: null, // Unlimited
+    aiActionsLimit: 200,
+  },
+  ai: {
+    recipeLimit: null, // Unlimited
+    aiActionsLimit: null, // Unlimited
+  },
+} as const;
+
+// Grace period for past_due status (in milliseconds)
+export const PAST_DUE_GRACE_PERIOD_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export type EntitlementsResult =
   | { success: true; data: UserEntitlements }
@@ -31,6 +57,7 @@ export interface CanCreateRecipeResult {
 /**
  * Get entitlements for the current authenticated user.
  * Note: Entitlement columns are stored in user_preferences table.
+ * Handles missing billing columns gracefully (migration not yet applied).
  */
 export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
   const supabase = await createClient();
@@ -44,71 +71,99 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
     return { success: false, error: "Not authenticated" };
   }
 
-  // Query user_preferences which contains entitlement columns
-  const { data, error } = await supabase
+  // Try full query with billing columns first
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: Record<string, any> | null = null;
+  let error: { message: string } | null = null;
+  let billingColumnsExist = true;
+
+  const fullResult = await supabase
     .from("user_preferences")
-    .select("plan, recipe_limit, ai_actions_limit, ai_actions_used")
+    .select("plan, plan_status, recipe_limit, ai_actions_limit, ai_actions_used, stripe_customer_id, stripe_subscription_id, current_period_end, past_due_since")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (fullResult.error?.message?.includes("does not exist")) {
+    // Billing columns don't exist, fall back to core columns only
+    billingColumnsExist = false;
+    const fallbackResult = await supabase
+      .from("user_preferences")
+      .select("plan, recipe_limit, ai_actions_limit, ai_actions_used")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  } else {
+    data = fullResult.data;
+    error = fullResult.error;
+  }
 
   if (error) {
     console.error("Error fetching entitlements from user_preferences:", error);
     return { success: false, error: error.message };
   }
 
-  // If no data found, upsert defaults and return them
-  if (!data) {
-    const { data: upsertedData, error: upsertError } = await supabase
-      .from("user_preferences")
-      .upsert({
-        user_id: user.id,
-        plan: "free",
-        recipe_limit: 25,
-        ai_actions_limit: 0,
-        ai_actions_used: 0,
-      }, { onConflict: "user_id" })
-      .select("plan, recipe_limit, ai_actions_limit, ai_actions_used")
-      .single();
-
-    if (upsertError) {
-      console.error("Error upserting default entitlements:", upsertError);
-      // Still return defaults even if upsert fails
+  // Helper to safely extract billing fields
+  const extractBillingFields = (row: Record<string, unknown> | null, hasBillingColumns: boolean) => {
+    if (!row || !hasBillingColumns) {
       return {
-        success: true,
-        data: {
-          userId: user.id,
-          plan: "free",
-          recipeLimit: 25,
-          aiActionsLimit: 0,
-          aiActionsUsed: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        planStatus: null as PlanStatus | null,
+        stripeCustomerId: null as string | null,
+        stripeSubscriptionId: null as string | null,
+        currentPeriodEnd: null as Date | null,
+        pastDueSince: null as Date | null,
       };
     }
+    return {
+      planStatus: (row.plan_status as PlanStatus) || null,
+      stripeCustomerId: (row.stripe_customer_id as string) || null,
+      stripeSubscriptionId: (row.stripe_subscription_id as string) || null,
+      currentPeriodEnd: row.current_period_end ? new Date(row.current_period_end as string) : null,
+      pastDueSince: row.past_due_since ? new Date(row.past_due_since as string) : null,
+    };
+  };
 
+  // If no data found, return defaults
+  // Note: user_preferences row should be created by handle_new_user trigger on signup.
+  // If row is missing, we return defaults instead of trying to upsert (which would
+  // fail due to RLS - billing columns are protected from client-side writes).
+  if (!data) {
+    console.warn(`No user_preferences row for user ${user.id}, returning defaults`);
     return {
       success: true,
       data: {
         userId: user.id,
-        plan: (upsertedData.plan as Plan) || "free",
-        recipeLimit: upsertedData.recipe_limit ?? 25,
-        aiActionsLimit: upsertedData.ai_actions_limit ?? 0,
-        aiActionsUsed: upsertedData.ai_actions_used ?? 0,
+        plan: "free",
+        planStatus: null,
+        recipeLimit: 25,
+        aiActionsLimit: 0,
+        aiActionsUsed: 0,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        currentPeriodEnd: null,
+        pastDueSince: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
     };
   }
 
+  const billingFields = extractBillingFields(data, billingColumnsExist);
+
   return {
     success: true,
     data: {
       userId: user.id,
       plan: (data.plan as Plan) || "free",
+      planStatus: billingFields.planStatus,
       recipeLimit: data.recipe_limit ?? 25,
       aiActionsLimit: data.ai_actions_limit ?? 0,
       aiActionsUsed: data.ai_actions_used ?? 0,
+      stripeCustomerId: billingFields.stripeCustomerId,
+      stripeSubscriptionId: billingFields.stripeSubscriptionId,
+      currentPeriodEnd: billingFields.currentPeriodEnd,
+      pastDueSince: billingFields.pastDueSince,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -136,6 +191,10 @@ export async function getRecipeCount(): Promise<number> {
 /**
  * Check if the current user can create a new recipe.
  * Returns detailed result with reason if not allowed.
+ *
+ * Grace period logic:
+ * - Users with past_due status get PAST_DUE_GRACE_PERIOD_MS to fix payment
+ * - After grace period expires, they're treated as free users
  */
 export async function canCreateRecipe(): Promise<CanCreateRecipeResult> {
   const supabase = await createClient();
@@ -163,30 +222,47 @@ export async function canCreateRecipe(): Promise<CanCreateRecipeResult> {
     };
   }
 
-  const { recipeLimit, plan } = entitlementsResult.data;
+  const { recipeLimit, plan, planStatus, pastDueSince } = entitlementsResult.data;
+
+  // Check if past_due user has exceeded grace period
+  let effectiveLimit = recipeLimit;
+  let effectivePlan = plan;
+
+  if (planStatus === "past_due" && pastDueSince) {
+    const gracePeriodExpired = Date.now() - pastDueSince.getTime() > PAST_DUE_GRACE_PERIOD_MS;
+    if (gracePeriodExpired) {
+      // Treat as free user after grace period
+      effectiveLimit = PLAN_LIMITS.free.recipeLimit;
+      effectivePlan = "free";
+    }
+  }
 
   // Unlimited plans (null limit) can always create
-  if (recipeLimit === null) {
+  if (effectiveLimit === null) {
     return { allowed: true };
   }
 
   // Check current count against limit
   const currentCount = await getRecipeCount();
 
-  if (currentCount >= recipeLimit) {
+  if (currentCount >= effectiveLimit) {
+    const reason = planStatus === "past_due"
+      ? "Your payment is past due. Please update your payment method to continue creating recipes."
+      : `You've reached your ${effectivePlan} plan limit of ${effectiveLimit} recipes. Upgrade to create more.`;
+
     return {
       allowed: false,
-      reason: `You've reached your ${plan} plan limit of ${recipeLimit} recipes. Upgrade to create more.`,
+      reason,
       code: "RECIPE_LIMIT_REACHED",
       currentCount,
-      limit: recipeLimit,
+      limit: effectiveLimit,
     };
   }
 
   return {
     allowed: true,
     currentCount,
-    limit: recipeLimit,
+    limit: effectiveLimit,
   };
 }
 
@@ -226,4 +302,116 @@ export function getPlanDisplayInfo(plan: Plan): {
         description: "Unlimited recipes + AI features",
       };
   }
+}
+
+// ============================================================
+// AI Actions Limit Functions
+// ============================================================
+
+export interface CanUseAiActionResult {
+  allowed: boolean;
+  reason?: string;
+  code?: "AI_LIMIT_REACHED" | "NOT_AUTHENTICATED" | "ENTITLEMENTS_ERROR";
+  currentUsed?: number;
+  limit?: number | null;
+}
+
+/**
+ * Check if the current user can use an AI action.
+ * Returns detailed result with reason if not allowed.
+ */
+export async function canUseAiAction(): Promise<CanUseAiActionResult> {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      allowed: false,
+      reason: "You must be logged in to use AI features",
+      code: "NOT_AUTHENTICATED",
+    };
+  }
+
+  // Get entitlements
+  const entitlementsResult = await getEntitlementsForUser();
+  if (!entitlementsResult.success) {
+    return {
+      allowed: false,
+      reason: "Unable to verify your plan. Please try again.",
+      code: "ENTITLEMENTS_ERROR",
+    };
+  }
+
+  const { aiActionsLimit, aiActionsUsed, plan, planStatus, pastDueSince } = entitlementsResult.data;
+
+  // Check if past_due user has exceeded grace period
+  let effectiveLimit = aiActionsLimit;
+  let effectivePlan = plan;
+
+  if (planStatus === "past_due" && pastDueSince) {
+    const gracePeriodExpired = Date.now() - pastDueSince.getTime() > PAST_DUE_GRACE_PERIOD_MS;
+    if (gracePeriodExpired) {
+      // Treat as free user after grace period
+      effectiveLimit = PLAN_LIMITS.free.aiActionsLimit;
+      effectivePlan = "free";
+    }
+  }
+
+  // Unlimited AI actions (null limit) can always use
+  if (effectiveLimit === null) {
+    return { allowed: true };
+  }
+
+  if (aiActionsUsed >= effectiveLimit) {
+    const reason = planStatus === "past_due"
+      ? "Your payment is past due. Please update your payment method to continue using AI features."
+      : `You've used all ${effectiveLimit} AI actions for this month on the ${effectivePlan} plan. Upgrade for more.`;
+
+    return {
+      allowed: false,
+      reason,
+      code: "AI_LIMIT_REACHED",
+      currentUsed: aiActionsUsed,
+      limit: effectiveLimit,
+    };
+  }
+
+  return {
+    allowed: true,
+    currentUsed: aiActionsUsed,
+    limit: effectiveLimit,
+  };
+}
+
+/**
+ * Increment the AI actions used counter for the current user.
+ * Called after successfully completing an AI action.
+ * Returns true if successful, false otherwise.
+ */
+export async function incrementAiActionsUsed(): Promise<boolean> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  // Use raw SQL to increment atomically
+  const { error } = await supabase.rpc("increment_ai_actions_used", {
+    p_user_id: user.id,
+  });
+
+  if (error) {
+    console.error("Failed to increment AI actions used:", error);
+    return false;
+  }
+
+  return true;
 }

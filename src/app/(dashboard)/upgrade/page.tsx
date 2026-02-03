@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { getEntitlementsForUser, getRecipeCount, getPlanDisplayInfo } from "@/lib/db/entitlements";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
+import { UpgradeButton } from "@/components/billing/UpgradeButton";
+import { ManageBillingButton } from "@/components/billing/ManageBillingButton";
 
 const plans = [
   {
@@ -19,7 +20,7 @@ const plans = [
       "Share recipes",
     ],
     cta: "Current plan",
-    disabled: true,
+    upgradeable: false,
   },
   {
     id: "plus",
@@ -33,8 +34,8 @@ const plans = [
       "Priority support",
       "Early access to features",
     ],
-    cta: "Coming soon",
-    disabled: true,
+    cta: "Upgrade to Plus",
+    upgradeable: true,
     highlighted: true,
   },
   {
@@ -51,7 +52,7 @@ const plans = [
       "Nutritional analysis",
     ],
     cta: "Coming soon",
-    disabled: true,
+    upgradeable: false,
   },
 ];
 
@@ -67,8 +68,12 @@ export default async function UpgradePage() {
   const recipeLimit = entitlementsResult.success
     ? entitlementsResult.data.recipeLimit
     : 25;
+  const stripeCustomerId = entitlementsResult.success
+    ? entitlementsResult.data.stripeCustomerId
+    : null;
 
   const planInfo = getPlanDisplayInfo(currentPlan);
+  const hasSubscription = currentPlan !== "free" && stripeCustomerId;
   const usagePercent = recipeLimit !== null ? Math.round((recipeCount / recipeLimit) * 100) : 0;
 
   return (
@@ -178,25 +183,38 @@ export default async function UpgradePage() {
                   ))}
                 </ul>
 
-                <button
-                  disabled={plan.disabled}
-                  className={`mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                    plan.disabled
-                      ? "bg-surface-2 text-muted cursor-not-allowed"
-                      : isPremium
-                      ? "bg-accent text-accent-foreground hover:bg-accent/90"
-                      : "bg-primary text-primary-foreground hover:bg-primary-hover"
-                  }`}
-                >
-                  {isCurrent ? "Current plan" : plan.cta}
-                </button>
+                {plan.upgradeable && !isCurrent ? (
+                  <UpgradeButton
+                    planId={plan.id}
+                    className={`mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
+                      isPremium
+                        ? "bg-accent text-accent-foreground hover:bg-accent/90"
+                        : "bg-primary text-primary-foreground hover:bg-primary-hover"
+                    }`}
+                  >
+                    {plan.cta}
+                  </UpgradeButton>
+                ) : isCurrent && hasSubscription ? (
+                  <ManageBillingButton
+                    className="mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors bg-surface-2 text-foreground hover:bg-surface-3"
+                  >
+                    Manage billing
+                  </ManageBillingButton>
+                ) : (
+                  <button
+                    disabled
+                    className="mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors bg-surface-2 text-muted cursor-not-allowed"
+                  >
+                    {isCurrent ? "Current plan" : plan.cta}
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Coming soon notice */}
+      {/* AI tier coming soon notice */}
       <div className="bg-accent-subtle border border-accent/20 rounded-xl p-6 text-center">
         <div className="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
           <svg
@@ -214,11 +232,11 @@ export default async function UpgradePage() {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          Paid plans coming soon
+          AI features coming soon
         </h3>
         <p className="text-sm text-muted max-w-md mx-auto">
-          We&apos;re working on bringing you premium features. For now, enjoy the
-          free tier with up to 25 recipes.
+          We&apos;re working on AI-powered recipe suggestions, smart substitutions,
+          and meal planning. Upgrade to Plus now and you&apos;ll get early access.
         </p>
       </div>
     </div>

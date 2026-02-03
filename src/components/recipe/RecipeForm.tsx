@@ -4,11 +4,16 @@ import { useActionState, useState } from "react";
 import type { Recipe, Ingredient, InstructionStep } from "@/lib/schemas";
 import type { FormState } from "@/lib/actions/recipes";
 import { UpgradeCallout } from "@/components/ui/UpgradeCallout";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 interface RecipeFormProps {
   recipe?: Recipe;
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   submitLabel: string;
+  formId?: string;
+  hideSubmitButton?: boolean;
+  imageUploadSlot?: React.ReactNode;
 }
 
 function generateUUID(): string {
@@ -34,7 +39,7 @@ const emptyInstruction = (): InstructionStep => ({
   refs: [],
 });
 
-export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
+export function RecipeForm({ recipe, action, submitLabel, formId = "recipe-form", hideSubmitButton = false, imageUploadSlot }: RecipeFormProps) {
   const [state, formAction, isPending] = useActionState(action, {
     success: true,
   });
@@ -74,7 +79,8 @@ export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
   };
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form id={formId} action={formAction} className="space-y-6">
+      {/* Error display - outside cards */}
       {!state.success && state.error && (
         state.fieldErrors?._code?.[0] === "RECIPE_LIMIT_REACHED" ? (
           <UpgradeCallout
@@ -82,7 +88,7 @@ export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
             limit={state.fieldErrors?._limit ? parseInt(state.fieldErrors._limit[0], 10) : undefined}
           />
         ) : (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="bg-error-subtle border border-error/20 text-error px-4 py-3 rounded-lg">
             {state.error}
             {state.fieldErrors?._form && (
               <ul className="mt-2 list-disc list-inside">
@@ -95,334 +101,346 @@ export function RecipeForm({ recipe, action, submitLabel }: RecipeFormProps) {
         )
       )}
 
-      {/* Basic Info */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Basic Info</h2>
-
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            required
-            defaultValue={recipe?.title}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-          {state.fieldErrors?.title && (
-            <p className="mt-1 text-sm text-red-600">
-              {state.fieldErrors.title[0]}
-            </p>
+      {/* Basic Info Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Basic Info</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Image upload slot - renders at top of Basic Info if provided */}
+          {imageUploadSlot && (
+            <div className="pb-4 border-b border-border">
+              {imageUploadSlot}
+            </div>
           )}
-        </div>
 
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            defaultValue={recipe?.description || ""}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
           <div>
             <label
-              htmlFor="servings"
-              className="block text-sm font-medium text-gray-700"
+              htmlFor="title"
+              className="block text-sm font-medium text-foreground"
             >
-              Servings
+              Title *
             </label>
             <input
-              type="number"
-              id="servings"
-              name="servings"
-              min="1"
-              defaultValue={recipe?.servings || ""}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              type="text"
+              id="title"
+              name="title"
+              required
+              defaultValue={recipe?.title}
+              className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
+            {state.fieldErrors?.title && (
+              <p className="mt-1 text-sm text-error">
+                {state.fieldErrors.title[0]}
+              </p>
+            )}
           </div>
 
           <div>
             <label
-              htmlFor="prepTimeMinutes"
-              className="block text-sm font-medium text-gray-700"
+              htmlFor="description"
+              className="block text-sm font-medium text-foreground"
             >
-              Prep Time (min)
+              Description
             </label>
-            <input
-              type="number"
-              id="prepTimeMinutes"
-              name="prepTimeMinutes"
-              min="0"
-              defaultValue={recipe?.prepTimeMinutes || ""}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              defaultValue={recipe?.description || ""}
+              className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="cookTimeMinutes"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Cook Time (min)
-            </label>
-            <input
-              type="number"
-              id="cookTimeMinutes"
-              name="cookTimeMinutes"
-              min="0"
-              defaultValue={recipe?.cookTimeMinutes || ""}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label
+                htmlFor="servings"
+                className="block text-sm font-medium text-foreground"
+              >
+                Servings
+              </label>
+              <input
+                type="number"
+                id="servings"
+                name="servings"
+                min="1"
+                defaultValue={recipe?.servings || ""}
+                className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="prepTimeMinutes"
+                className="block text-sm font-medium text-foreground"
+              >
+                Prep Time (min)
+              </label>
+              <input
+                type="number"
+                id="prepTimeMinutes"
+                name="prepTimeMinutes"
+                min="0"
+                defaultValue={recipe?.prepTimeMinutes || ""}
+                className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cookTimeMinutes"
+                className="block text-sm font-medium text-foreground"
+              >
+                Cook Time (min)
+              </label>
+              <input
+                type="number"
+                id="cookTimeMinutes"
+                name="cookTimeMinutes"
+                min="0"
+                defaultValue={recipe?.cookTimeMinutes || ""}
+                className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Ingredients */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Ingredients</h2>
-          <button
-            type="button"
-            onClick={addIngredient}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            + Add Ingredient
-          </button>
-        </div>
-
-        {state.fieldErrors?.ingredients && (
-          <p className="text-sm text-red-600">
-            {state.fieldErrors.ingredients[0]}
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {ingredients.map((ingredient, index) => (
-            <div
-              key={ingredient.id}
-              className="p-4 bg-gray-50 rounded-lg space-y-3"
+      {/* Ingredients + Instructions - responsive grid of cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Ingredients Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Ingredients</CardTitle>
+            <button
+              type="button"
+              onClick={addIngredient}
+              className="text-sm text-primary hover:text-primary-hover transition-colors cursor-pointer"
             >
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-gray-500">
-                  Ingredient {index + 1}
-                </span>
-                {ingredients.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeIngredient(index)}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                )}
+              + Add
+            </button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {state.fieldErrors?.ingredients && (
+              <p className="text-sm text-error">
+                {state.fieldErrors.ingredients[0]}
+              </p>
+            )}
+
+            {ingredients.map((ingredient, index) => (
+              <div
+                key={ingredient.id}
+                className="p-3 bg-surface-2 rounded-lg space-y-2"
+              >
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-medium text-muted">
+                    #{index + 1}
+                  </span>
+                  {ingredients.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeIngredient(index)}
+                      className="text-xs text-error hover:text-error/80 transition-colors cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <input type="hidden" name="ingredient_id" value={ingredient.id} />
+
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-muted">
+                      Original Text *
+                    </label>
+                    <input
+                      type="text"
+                      name="ingredient_originalText"
+                      defaultValue={ingredient.originalText}
+                      placeholder="e.g., 1 tsp cumin, ground"
+                      className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="ingredient_name"
+                        defaultValue={ingredient.name}
+                        placeholder="cumin"
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        Type
+                      </label>
+                      <select
+                        name="ingredient_ingredientType"
+                        defaultValue={ingredient.ingredientType}
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent cursor-pointer"
+                      >
+                        <option value="volume">Volume</option>
+                        <option value="weight">Weight</option>
+                        <option value="count">Count</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        Qty
+                      </label>
+                      <input
+                        type="number"
+                        name="ingredient_originalQuantity"
+                        step="any"
+                        defaultValue={ingredient.originalQuantity ?? ""}
+                        placeholder="1"
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        Unit
+                      </label>
+                      <input
+                        type="text"
+                        name="ingredient_originalUnit"
+                        defaultValue={ingredient.originalUnit ?? ""}
+                        placeholder="tsp"
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        Canon
+                      </label>
+                      <input
+                        type="number"
+                        name="ingredient_canonicalQuantity"
+                        step="any"
+                        defaultValue={ingredient.canonicalQuantity ?? ""}
+                        placeholder="4.93"
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-muted">
+                        C.Unit
+                      </label>
+                      <select
+                        name="ingredient_canonicalUnit"
+                        defaultValue={ingredient.canonicalUnit ?? ""}
+                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent cursor-pointer"
+                      >
+                        <option value="">-</option>
+                        <option value="ml">ml</option>
+                        <option value="g">g</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
+            ))}
+          </CardContent>
+        </Card>
 
-              <input type="hidden" name="ingredient_id" value={ingredient.id} />
+        {/* Instructions Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Instructions</CardTitle>
+              <p className="text-xs text-muted mt-1">
+                Measurements shown automatically when viewing.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addInstruction}
+              className="text-sm text-primary hover:text-primary-hover transition-colors cursor-pointer"
+            >
+              + Add
+            </button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {state.fieldErrors?.instructions && (
+              <p className="text-sm text-error">
+                {state.fieldErrors.instructions[0]}
+              </p>
+            )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="ingredient_name"
-                    defaultValue={ingredient.name}
-                    placeholder="e.g., cumin"
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  />
+            {instructions.map((instruction, index) => (
+              <div
+                key={instruction.id}
+                className="p-3 bg-surface-2 rounded-lg space-y-2"
+              >
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-medium text-muted">
+                    Step {index + 1}
+                  </span>
+                  {instructions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeInstruction(index)}
+                      className="text-xs text-error hover:text-error/80 transition-colors cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Original Text *
-                  </label>
-                  <input
-                    type="text"
-                    name="ingredient_originalText"
-                    defaultValue={ingredient.originalText}
-                    placeholder="e.g., 1 tsp cumin, ground"
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    name="ingredient_originalQuantity"
-                    step="any"
-                    defaultValue={ingredient.originalQuantity ?? ""}
-                    placeholder="1"
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Unit
-                  </label>
-                  <input
-                    type="text"
-                    name="ingredient_originalUnit"
-                    defaultValue={ingredient.originalUnit ?? ""}
-                    placeholder="tsp"
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Type *
-                  </label>
-                  <select
-                    name="ingredient_ingredientType"
-                    defaultValue={ingredient.ingredientType}
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  >
-                    <option value="volume">Volume</option>
-                    <option value="weight">Weight</option>
-                    <option value="count">Count</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-600">
-                    Canonical Unit
-                  </label>
-                  <select
-                    name="ingredient_canonicalUnit"
-                    defaultValue={ingredient.canonicalUnit ?? ""}
-                    className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                  >
-                    <option value="">None</option>
-                    <option value="ml">ml</option>
-                    <option value="g">g</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600">
-                  Canonical Quantity
-                </label>
                 <input
-                  type="number"
-                  name="ingredient_canonicalQuantity"
-                  step="any"
-                  defaultValue={ingredient.canonicalQuantity ?? ""}
-                  placeholder="e.g., 4.93 for ml"
-                  className="mt-1 block w-32 px-2 py-1.5 text-sm border border-gray-300 rounded-md"
+                  type="hidden"
+                  name="instruction_id"
+                  value={instruction.id}
+                />
+
+                {/* Store refs as JSON in hidden input */}
+                <input
+                  type="hidden"
+                  name="instruction_refs"
+                  value={JSON.stringify(instruction.refs)}
+                />
+
+                <textarea
+                  name="instruction_text"
+                  rows={3}
+                  defaultValue={instruction.text}
+                  placeholder="Describe this step..."
+                  className="block w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Instructions */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Instructions</h2>
-          <button
-            type="button"
-            onClick={addInstruction}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            + Add Step
-          </button>
+      {/* Submit - only shown if not hidden (for inline use) */}
+      {!hideSubmitButton && (
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isPending} isLoading={isPending}>
+            {isPending ? "Saving..." : submitLabel}
+          </Button>
         </div>
-
-        {state.fieldErrors?.instructions && (
-          <p className="text-sm text-red-600">
-            {state.fieldErrors.instructions[0]}
-          </p>
-        )}
-
-        <p className="text-xs text-gray-500 mb-3">
-          Measurements are automatically shown when viewing recipes.
-        </p>
-
-        <div className="space-y-3">
-          {instructions.map((instruction, index) => (
-            <div
-              key={instruction.id}
-              className="p-4 bg-gray-50 rounded-lg space-y-3"
-            >
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium text-gray-500">
-                  Step {index + 1}
-                </span>
-                {instructions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeInstruction(index)}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-
-              <input
-                type="hidden"
-                name="instruction_id"
-                value={instruction.id}
-              />
-
-              {/* Store refs as JSON in hidden input */}
-              <input
-                type="hidden"
-                name="instruction_refs"
-                value={JSON.stringify(instruction.refs)}
-              />
-
-              <textarea
-                name="instruction_text"
-                rows={2}
-                defaultValue={instruction.text}
-                placeholder="Describe this step..."
-                className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Submit */}
-      <div className="flex justify-end space-x-4">
-        <a
-          href="/recipes"
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Cancel
-        </a>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isPending ? "Saving..." : submitLabel}
-        </button>
-      </div>
+      )}
     </form>
   );
+}
+
+// Export a hook to get the form's pending state for external submit buttons
+export function useRecipeFormPending() {
+  // This is a placeholder - the actual pending state is managed inside RecipeForm
+  // For external buttons, we'll use the form attribute approach
+  return false;
 }

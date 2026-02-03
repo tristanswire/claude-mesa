@@ -4,7 +4,9 @@ import { getUserPreferences } from "@/lib/db/user-preferences";
 import { listStacks, getStacksForRecipe } from "@/lib/db/stacks";
 import { getActiveShareForRecipe } from "@/lib/db/recipe-shares";
 import { RecipeDetailView } from "@/components/recipe/RecipeDetailView";
+import { ShopThisRecipe } from "@/components/recipe/ShopThisRecipe";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { RECIPE_PAGE_MAX_WIDTH } from "@/components/recipe/RecipePageContainer";
 
 interface RecipeDetailPageProps {
   params: Promise<{ id: string }>;
@@ -53,13 +55,18 @@ export default async function RecipeDetailPage({
   const activeShare = shareResult.success ? shareResult.data : null;
 
   return (
-    <RecipeDetailView
-      recipe={recipe}
-      initialUnitSystem={unitSystem}
-      allStacks={allStacks}
-      currentStacks={currentStacks}
-      initialShareToken={activeShare?.token}
-      initialShareId={activeShare?.id}
-    />
+    <>
+      <RecipeDetailView
+        recipe={recipe}
+        initialUnitSystem={unitSystem}
+        allStacks={allStacks}
+        currentStacks={currentStacks}
+        initialShareToken={activeShare?.token}
+        initialShareId={activeShare?.id}
+      />
+      <div className={RECIPE_PAGE_MAX_WIDTH}>
+        <ShopThisRecipe recipeId={recipe.id} />
+      </div>
+    </>
   );
 }
