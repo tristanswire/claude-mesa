@@ -2,12 +2,19 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { trackEventAsync } from "@/lib/analytics/events";
+import { logStripeAction, generateErrorId } from "@/lib/logger";
 
 export async function POST() {
+  let userId: string | undefined;
+
   try {
     // 1. Verify Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
-      console.error("STRIPE_SECRET_KEY is not configured");
+      const errorId = generateErrorId();
+      logStripeAction("checkout_create", false, {
+        errorId,
+        error: "STRIPE_SECRET_KEY is not configured",
+      });
       return NextResponse.json(
         { error: "Billing is not configured" },
         { status: 500 }
@@ -15,7 +22,11 @@ export async function POST() {
     }
 
     if (!process.env.STRIPE_PRICE_ID_PLUS) {
-      console.error("STRIPE_PRICE_ID_PLUS is not configured");
+      const errorId = generateErrorId();
+      logStripeAction("checkout_create", false, {
+        errorId,
+        error: "STRIPE_PRICE_ID_PLUS is not configured",
+      });
       return NextResponse.json(
         { error: "Pricing is not configured" },
         { status: 500 }
@@ -29,8 +40,10 @@ export async function POST() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 });
     }
+
+    userId = user.id;
 
     // 3. Get existing stripe_customer_id from user_preferences
     const { data: prefs, error: prefsError } = await supabase
@@ -40,7 +53,12 @@ export async function POST() {
       .single();
 
     if (prefsError && prefsError.code !== "PGRST116") {
-      console.error("Error fetching user preferences:", prefsError);
+      const errorId = generateErrorId();
+      logStripeAction("checkout_create", false, {
+        userId: user.id,
+        errorId,
+        error: `Failed to fetch preferences: ${prefsError.message}`,
+      });
       return NextResponse.json(
         { error: "Failed to fetch account information" },
         { status: 500 }
@@ -80,9 +98,12 @@ export async function POST() {
         .eq("user_id", user.id);
 
       if (updateError) {
-        console.error("Error persisting stripe_customer_id:", updateError);
-        // Continue anyway - customer is created in Stripe
-        // Webhook will reconcile later
+        // Log but continue - customer is created in Stripe, webhook will reconcile
+        logStripeAction("checkout_create", false, {
+          userId: user.id,
+          customerId: stripeCustomerId,
+          error: `Failed to persist customer ID: ${updateError.message}`,
+        });
       }
     }
 
@@ -112,15 +133,31 @@ export async function POST() {
       billing_address_collection: "auto",
     });
 
-    // 7. Track checkout started (non-blocking)
-    trackEventAsync("checkout_started", {
-      plan: "plus",
+    logStripeAction("checkout_create", true, {
+      userId: user.id,
+      customerId: stripeCustomerId,
     });
+
+    // 7. Track checkout started (non-blocking)
+    try {
+      trackEventAsync("checkout_started", {
+        plan: "plus",
+      });
+    } catch {
+      // Analytics should never break checkout
+    }
 
     // 8. Return checkout URL
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    const errorId = generateErrorId();
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    logStripeAction("checkout_create", false, {
+      userId,
+      errorId,
+      error: errorMessage,
+    });
 
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
@@ -130,7 +167,7 @@ export async function POST() {
     }
 
     return NextResponse.json(
-      { error: "Something went wrong" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

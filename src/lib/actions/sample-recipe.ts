@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createRecipe } from "@/lib/db/recipes";
 import { trackEventAsync } from "@/lib/analytics/events";
 import type { RecipePayload, Ingredient, InstructionStep } from "@/lib/schemas";
@@ -219,6 +220,9 @@ export async function createSampleRecipeAction(): Promise<SampleRecipeResult> {
     recipeId: result.data.id,
     recipeTitle: result.data.title,
   });
+
+  // Revalidate recipe list so new recipe appears
+  revalidatePath("/recipes");
 
   redirect(`/recipes/${result.data.id}`);
 }

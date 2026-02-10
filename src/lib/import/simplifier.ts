@@ -4,6 +4,8 @@
  * Deterministic, no LLM usage.
  */
 
+import { decodeHtmlEntities } from "@/lib/decode-html";
+
 // ============================================================
 // JUNK PHRASE PATTERNS (case-insensitive removal)
 // ============================================================
@@ -112,49 +114,9 @@ const EMOJI_PATTERN =
 // Repeated punctuation (3+ of the same)
 const REPEATED_PUNCT_PATTERN = /([!?.,:;])\1{2,}/g;
 
-// HTML entities
-const HTML_ENTITIES: Record<string, string> = {
-  "&nbsp;": " ",
-  "&amp;": "&",
-  "&lt;": "<",
-  "&gt;": ">",
-  "&quot;": '"',
-  "&#39;": "'",
-  "&apos;": "'",
-  "&#x27;": "'",
-  "&#x2F;": "/",
-  "&mdash;": "—",
-  "&ndash;": "–",
-  "&hellip;": "...",
-  "&deg;": "°",
-  "&frac12;": "½",
-  "&frac14;": "¼",
-  "&frac34;": "¾",
-};
-
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
-
-/**
- * Replace HTML entities with their characters.
- */
-function decodeHtmlEntities(text: string): string {
-  let result = text;
-  for (const [entity, char] of Object.entries(HTML_ENTITIES)) {
-    result = result.replace(new RegExp(entity, "gi"), char);
-  }
-  // Handle numeric entities
-  result = result.replace(/&#(\d+);/g, (_, code) =>
-    String.fromCharCode(parseInt(code, 10))
-  );
-  result = result.replace(/&#x([0-9a-f]+);/gi, (_, code) =>
-    String.fromCharCode(parseInt(code, 16))
-  );
-  // Non-breaking space
-  result = result.replace(/\u00a0/g, " ");
-  return result;
-}
 
 /**
  * Remove URLs from text.

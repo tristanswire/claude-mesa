@@ -4,7 +4,7 @@ import {
   parseRecipePayload,
   type ValidationResult,
 } from "@/lib/validation/recipes";
-import type { Recipe, RecipePayload } from "@/lib/schemas";
+import type { Recipe } from "@/lib/schemas";
 import { linkIngredientsToInstructions, allRefsEmpty } from "@/lib/import";
 import { canCreateRecipe } from "@/lib/db/entitlements";
 import { trackEventAsync } from "@/lib/analytics/events";
@@ -19,14 +19,27 @@ export type DbResult<T> =
 export async function listRecipes(): Promise<DbResult<Recipe[]>> {
   const supabase = await createClient();
 
+  // Check authentication status first
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
   const { data, error } = await supabase
     .from("recipes")
     .select("*")
     .order("updated_at", { ascending: false });
 
   if (error) {
-    console.error("Error listing recipes:", error);
-    return { success: false, error: error.message };
+    console.error("[listRecipes] Database error:", {
+      userId: user.id.slice(0, 8),
+      code: error.code,
+      message: error.message,
+    });
+    return { success: false, error: "Failed to load recipes" };
   }
 
   // Validate each recipe from DB
@@ -34,7 +47,7 @@ export async function listRecipes(): Promise<DbResult<Recipe[]>> {
   for (const row of data || []) {
     const result = parseRecipeFromDb(row);
     if (!result.success) {
-      console.error("Invalid recipe data in DB:", row.id, result.details);
+      console.error("[listRecipes] Invalid recipe data:", row.id, result.details);
       // Skip invalid recipes but continue
       continue;
     }
@@ -46,9 +59,30 @@ export async function listRecipes(): Promise<DbResult<Recipe[]>> {
 
 /**
  * Get a single recipe by ID.
+ * Returns appropriate error messages for different failure cases.
  */
 export async function getRecipeById(id: string): Promise<DbResult<Recipe>> {
   const supabase = await createClient();
+
+  // Check authentication status first
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  // Dev-only logging for debugging RLS issues
+  if (process.env.NODE_ENV === "development") {
+    console.log("[getRecipeById] Debug:", {
+      recipeId: id,
+      userId: user?.id ? `${user.id.slice(0, 8)}...` : "not authenticated",
+      authError: authError?.message || null,
+    });
+  }
+
+  // If not authenticated, return early with clear message
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
 
   const { data, error } = await supabase
     .from("recipes")
@@ -57,17 +91,39 @@ export async function getRecipeById(id: string): Promise<DbResult<Recipe>> {
     .single();
 
   if (error) {
+    // PGRST116 = "JSON object requested, multiple (or no) rows returned"
+    // This happens when: 1) recipe doesn't exist, or 2) RLS blocked access
     if (error.code === "PGRST116") {
+      // Check if recipe exists at all (using a count query that bypasses single())
+      // This helps distinguish "not found" from "no permission"
+      // Note: If user doesn't own the recipe, RLS will return 0 rows
+      // So we can only definitively say "not found" if they own 0 recipes with this ID
       return { success: false, error: "Recipe not found" };
     }
-    console.error("Error getting recipe:", error);
-    return { success: false, error: error.message };
+
+    // RLS policy violation (rare - usually returns 0 rows instead)
+    if (error.code === "42501" || error.message.includes("permission")) {
+      console.error("[getRecipeById] Permission denied:", {
+        recipeId: id,
+        userId: user.id.slice(0, 8),
+        error: error.message,
+      });
+      return { success: false, error: "You don't have permission to view this recipe" };
+    }
+
+    console.error("[getRecipeById] Database error:", {
+      recipeId: id,
+      userId: user.id.slice(0, 8),
+      code: error.code,
+      message: error.message,
+    });
+    return { success: false, error: "Failed to load recipe" };
   }
 
   const result = parseRecipeFromDb(data);
   if (!result.success) {
-    console.error("Invalid recipe data in DB:", id, result.details);
-    return { success: false, error: "Recipe data is invalid" };
+    console.error("[getRecipeById] Invalid recipe data:", id, result.details);
+    return { success: false, error: "Recipe data is corrupted" };
   }
 
   return { success: true, data: result.data };

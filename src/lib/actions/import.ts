@@ -5,9 +5,10 @@ import {
   importRecipeFromText,
   type ImportResponse,
 } from "@/lib/import";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, IMPORT_RATE_LIMIT } from "@/lib/rate-limit";
-import { logImportFailure, extractDomain } from "@/lib/logger";
+import { logImportFailure, extractDomain, generateErrorId } from "@/lib/logger";
 
 export type ImportActionResult = ImportResponse;
 
@@ -54,13 +55,18 @@ export async function importRecipeAction(url: string): Promise<ImportActionResul
 
   // Log failures for debugging
   if (!result.success) {
+    const errorId = generateErrorId();
     logImportFailure({
       source: "url",
       domain: extractDomain(trimmedUrl),
       errorType: categorizeError(result.error),
       errorMessage: result.error,
       userId: user.id,
+      errorId,
     });
+  } else {
+    // Revalidate recipe list so new recipe appears
+    revalidatePath("/recipes");
   }
 
   return result;
@@ -134,13 +140,18 @@ export async function importRecipeFromTextAction(payload: {
 
   // Log failures for debugging
   if (!result.success) {
+    const errorId = generateErrorId();
     logImportFailure({
       source: "text",
       domain: payload.sourceUrl ? extractDomain(payload.sourceUrl) : undefined,
       errorType: categorizeError(result.error),
       errorMessage: result.error,
       userId: user.id,
+      errorId,
     });
+  } else {
+    // Revalidate recipe list so new recipe appears
+    revalidatePath("/recipes");
   }
 
   return result;

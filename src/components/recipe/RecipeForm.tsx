@@ -152,7 +152,7 @@ export function RecipeForm({ recipe, action, submitLabel, formId = "recipe-form"
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label
                 htmlFor="servings"
@@ -293,7 +293,7 @@ export function RecipeForm({ recipe, action, submitLabel, formId = "recipe-form"
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-muted">
                         Qty

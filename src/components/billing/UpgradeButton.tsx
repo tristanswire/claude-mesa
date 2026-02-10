@@ -55,7 +55,7 @@ export function UpgradeButton({
       <button
         onClick={handleClick}
         disabled={disabled || isLoading}
-        className={className}
+        className={`cursor-pointer disabled:cursor-not-allowed ${className}`}
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

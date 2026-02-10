@@ -4,6 +4,7 @@
  */
 
 import { RecipePayloadSchema, type RecipePayload } from "@/lib/schemas";
+import { decodeHtmlEntities, decodeHtmlEntitiesArray } from "@/lib/decode-html";
 import { fetchRecipeHtml } from "./fetcher";
 import { parseJsonLd } from "./jsonld";
 import { parseIngredients } from "./canonicalize";
@@ -42,22 +43,31 @@ export async function importRecipeFromUrl(url: string): Promise<ImportResponse> 
 
   const raw = parseResult.data;
 
-  // Step 3: Parse ingredients
-  const ingredients = parseIngredients(raw.ingredientLines);
+  // Step 3: Decode HTML entities in all text fields
+  // This ensures characters like &#39; become ' before further processing
+  const decodedTitle = decodeHtmlEntities(raw.title);
+  const decodedDescription = raw.description
+    ? decodeHtmlEntities(raw.description)
+    : undefined;
+  const decodedIngredientLines = decodeHtmlEntitiesArray(raw.ingredientLines);
+  const decodedInstructionLines = decodeHtmlEntitiesArray(raw.instructionLines);
 
-  // Step 4: Normalize instructions
-  const normalizedInstructions = normalizeInstructions(raw.instructionLines);
+  // Step 4: Parse ingredients
+  const ingredients = parseIngredients(decodedIngredientLines);
 
-  // Step 5: Auto-link ingredients to instructions
+  // Step 5: Normalize instructions (also decodes entities, but double-decode is safe)
+  const normalizedInstructions = normalizeInstructions(decodedInstructionLines);
+
+  // Step 6: Auto-link ingredients to instructions
   const instructions = linkIngredientsToInstructions(
     normalizedInstructions,
     ingredients
   );
 
-  // Step 6: Build recipe payload
+  // Step 7: Build recipe payload
   const payload: RecipePayload = {
-    title: raw.title,
-    description: raw.description,
+    title: decodedTitle,
+    description: decodedDescription,
     servings: raw.servings,
     prepTimeMinutes: raw.prepTimeMinutes,
     cookTimeMinutes: raw.cookTimeMinutes,
@@ -67,7 +77,7 @@ export async function importRecipeFromUrl(url: string): Promise<ImportResponse> 
     instructions,
   };
 
-  // Step 7: Validate with Zod
+  // Step 8: Validate with Zod
   const validation = RecipePayloadSchema.safeParse(payload);
   if (!validation.success) {
     // This shouldn't happen if our parsing is correct, but handle it gracefully
@@ -99,22 +109,29 @@ export async function importRecipeFromText(payload: {
     return { success: false, error: validation.error! };
   }
 
-  // Step 3: Parse ingredients
-  const ingredients = parseIngredients(parsed.ingredientLines);
+  // Step 3: Decode HTML entities (pasted text might contain them)
+  const decodedIngredientLines = decodeHtmlEntitiesArray(parsed.ingredientLines);
+  const decodedInstructionLines = decodeHtmlEntitiesArray(parsed.instructionLines);
+  const decodedTitle = decodeHtmlEntities(parsed.title);
 
-  // Step 4: Normalize instructions
-  const normalizedInstructions = normalizeInstructions(parsed.instructionLines);
+  // Step 4: Parse ingredients
+  const ingredients = parseIngredients(decodedIngredientLines);
 
-  // Step 5: Auto-link ingredients to instructions
+  // Step 5: Normalize instructions
+  const normalizedInstructions = normalizeInstructions(decodedInstructionLines);
+
+  // Step 6: Auto-link ingredients to instructions
   const instructions = linkIngredientsToInstructions(
     normalizedInstructions,
     ingredients
   );
 
-  // Step 6: Determine title
-  const title = payload.title || parsed.title || "Imported Recipe";
+  // Step 7: Determine title (use provided title, or decoded parsed title, or fallback)
+  const title = payload.title
+    ? decodeHtmlEntities(payload.title)
+    : decodedTitle || "Imported Recipe";
 
-  // Step 7: Build recipe payload
+  // Step 8: Build recipe payload
   const recipePayload: RecipePayload = {
     title,
     sourceUrl: payload.sourceUrl,
@@ -122,7 +139,7 @@ export async function importRecipeFromText(payload: {
     instructions,
   };
 
-  // Step 8: Validate with Zod
+  // Step 9: Validate with Zod
   const zodValidation = RecipePayloadSchema.safeParse(recipePayload);
   if (!zodValidation.success) {
     console.error("Text import validation failed:", zodValidation.error.flatten());

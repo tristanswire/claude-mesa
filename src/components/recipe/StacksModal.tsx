@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
+import Link from "next/link";
 import type { Stack } from "@/lib/db/stacks";
 import { syncRecipeStacksAction } from "@/lib/actions/stacks";
 import { Button } from "@/components/ui/Button";
@@ -27,12 +28,14 @@ export function StacksModal({
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Initialize selected stacks when modal opens
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isOpen) {
       setSelectedIds(new Set(currentStacks.map((s) => s.id)));
       setError(null);
     }
   }, [isOpen, currentStacks]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Handle escape key and click outside
   useEffect(() => {
@@ -115,7 +118,7 @@ export function StacksModal({
             <div className="text-center py-6">
               <p className="text-muted mb-4">No stacks yet.</p>
               <Button variant="outline" size="sm" asChild>
-                <a href="/stacks/new">Create your first stack</a>
+                <Link href="/stacks/new">Create your first stack</Link>
               </Button>
             </div>
           ) : (

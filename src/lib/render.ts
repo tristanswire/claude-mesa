@@ -1,4 +1,4 @@
-import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
+import type { Ingredient, InstructionStep } from "@/lib/schemas";
 import { formatIngredient, formatMeasurement, type UnitSystem } from "@/lib/units";
 
 /**

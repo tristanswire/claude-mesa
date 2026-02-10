@@ -9,11 +9,15 @@ import {
   updateRecipeImage,
 } from "@/lib/db/recipes";
 import { canCreateRecipe } from "@/lib/db/entitlements";
+import { createClient } from "@/lib/supabase/server";
+import { logRecipeAction, generateErrorId } from "@/lib/logger";
+import { mapErrorToFriendlyMessage } from "@/lib/errors";
 import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
 
 export type FormState = {
   success: boolean;
   error?: string;
+  errorId?: string;
   fieldErrors?: Record<string, string[]>;
 };
 
@@ -137,6 +141,10 @@ export async function createRecipeAction(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
+  // Get user for logging
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   // Check if user can create more recipes (plan limits)
   const limitCheck = await canCreateRecipe();
   if (!limitCheck.allowed) {
@@ -151,22 +159,39 @@ export async function createRecipeAction(
   const result = await createRecipe(payload);
 
   if (!result.success) {
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(result.error);
+    logRecipeAction("save", false, {
+      userId: user?.id,
+      errorId,
+      error: result.error,
+    });
     return {
       success: false,
-      error: result.error,
+      error: message,
+      errorId,
       fieldErrors: result.details,
     };
   }
 
   const recipeId = result.data.id;
 
+  logRecipeAction("save", true, {
+    recipeId,
+    userId: user?.id,
+  });
+
   // Save image URL if provided (for imported recipes with external images)
   if (payload.imageUrl) {
     // For external images, we only store the URL (no image_path since it's not in our storage)
     const imageResult = await updateRecipeImage(recipeId, null, payload.imageUrl);
     if (!imageResult.success) {
-      console.error("Failed to save image URL:", imageResult.error);
-      // Don't fail the whole operation - the recipe was created successfully
+      // Log but don't fail - the recipe was created successfully
+      logRecipeAction("update", false, {
+        recipeId,
+        userId: user?.id,
+        error: `Image URL save failed: ${imageResult.error}`,
+      });
     }
   }
 
@@ -179,17 +204,35 @@ export async function updateRecipeAction(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
+  // Get user for logging
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const payload = parseFormData(formData);
 
   const result = await updateRecipe(id, payload);
 
   if (!result.success) {
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(result.error);
+    logRecipeAction("update", false, {
+      recipeId: id,
+      userId: user?.id,
+      errorId,
+      error: result.error,
+    });
     return {
       success: false,
-      error: result.error,
+      error: message,
+      errorId,
       fieldErrors: result.details,
     };
   }
+
+  logRecipeAction("update", true, {
+    recipeId: id,
+    userId: user?.id,
+  });
 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${id}`);
@@ -197,14 +240,32 @@ export async function updateRecipeAction(
 }
 
 export async function deleteRecipeAction(id: string): Promise<FormState> {
+  // Get user for logging
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const result = await deleteRecipe(id);
 
   if (!result.success) {
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(result.error);
+    logRecipeAction("delete", false, {
+      recipeId: id,
+      userId: user?.id,
+      errorId,
+      error: result.error,
+    });
     return {
       success: false,
-      error: result.error,
+      error: message,
+      errorId,
     };
   }
+
+  logRecipeAction("delete", true, {
+    recipeId: id,
+    userId: user?.id,
+  });
 
   revalidatePath("/recipes");
   redirect("/recipes");

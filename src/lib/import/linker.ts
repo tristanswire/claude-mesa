@@ -3,7 +3,7 @@
  * Finds exact positions of ingredient mentions for inline measurement injection.
  */
 
-import type { Ingredient, InstructionStep, IngredientRef, CharRange } from "@/lib/schemas";
+import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
 
 // Descriptors to strip when matching (helps match "olive oil" to "extra virgin olive oil")
 const STRIP_DESCRIPTORS = [

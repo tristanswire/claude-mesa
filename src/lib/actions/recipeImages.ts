@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { updateRecipeImage, getRecipeById } from "@/lib/db/recipes";
+import { logImageAction, generateErrorId } from "@/lib/logger";
+import { mapErrorToFriendlyMessage } from "@/lib/errors";
 
 const BUCKET_NAME = "recipe-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -17,6 +19,7 @@ export interface ImageUploadResult {
 export interface ImageUploadError {
   success: false;
   error: string;
+  errorId?: string;
 }
 
 export type ImageUploadResponse = ImageUploadResult | ImageUploadError;
@@ -74,7 +77,7 @@ export async function uploadRecipeImageAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { success: false, error: "Not authenticated" };
+    return { success: false, error: "Please sign in to upload images" };
   }
 
   // Verify user owns this recipe
@@ -83,7 +86,7 @@ export async function uploadRecipeImageAction(
     return { success: false, error: "Recipe not found" };
   }
   if (recipeResult.data.userId !== user.id) {
-    return { success: false, error: "Not authorized" };
+    return { success: false, error: "You don't have permission to edit this recipe" };
   }
 
   // Build path and upload
@@ -103,8 +106,16 @@ export async function uploadRecipeImageAction(
     });
 
   if (uploadError) {
-    console.error("Error uploading recipe image:", uploadError);
-    return { success: false, error: uploadError.message };
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(uploadError.message);
+    logImageAction("upload", false, {
+      recipeId,
+      userId: user.id,
+      errorId,
+      error: uploadError.message,
+      fileSize: file.size,
+    });
+    return { success: false, error: message, errorId };
   }
 
   // Get public URL
@@ -116,8 +127,22 @@ export async function uploadRecipeImageAction(
   // Update recipe with image info
   const updateResult = await updateRecipeImage(recipeId, imagePath, imageUrl);
   if (!updateResult.success) {
-    return { success: false, error: updateResult.error };
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(updateResult.error);
+    logImageAction("upload", false, {
+      recipeId,
+      userId: user.id,
+      errorId,
+      error: updateResult.error,
+    });
+    return { success: false, error: message, errorId };
   }
+
+  logImageAction("upload", true, {
+    recipeId,
+    userId: user.id,
+    fileSize: file.size,
+  });
 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${recipeId}`);
@@ -134,7 +159,7 @@ export async function uploadRecipeImageAction(
  */
 export async function removeRecipeImageAction(
   recipeId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; errorId?: string }> {
   const supabase = await createClient();
 
   // Get current user
@@ -143,7 +168,7 @@ export async function removeRecipeImageAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { success: false, error: "Not authenticated" };
+    return { success: false, error: "Please sign in to remove images" };
   }
 
   // Get recipe to find image path
@@ -152,7 +177,7 @@ export async function removeRecipeImageAction(
     return { success: false, error: "Recipe not found" };
   }
   if (recipeResult.data.userId !== user.id) {
-    return { success: false, error: "Not authorized" };
+    return { success: false, error: "You don't have permission to edit this recipe" };
   }
 
   const { imagePath } = recipeResult.data;
@@ -164,16 +189,33 @@ export async function removeRecipeImageAction(
       .remove([imagePath]);
 
     if (deleteError) {
-      console.error("Error deleting recipe image:", deleteError);
-      // Continue anyway - we still want to clear the DB reference
+      // Log but continue - we still want to clear the DB reference
+      logImageAction("delete", false, {
+        recipeId,
+        userId: user.id,
+        error: `Storage delete failed: ${deleteError.message}`,
+      });
     }
   }
 
   // Clear image fields in recipe
   const updateResult = await updateRecipeImage(recipeId, null, null);
   if (!updateResult.success) {
-    return { success: false, error: updateResult.error };
+    const errorId = generateErrorId();
+    const { message } = mapErrorToFriendlyMessage(updateResult.error);
+    logImageAction("delete", false, {
+      recipeId,
+      userId: user.id,
+      errorId,
+      error: updateResult.error,
+    });
+    return { success: false, error: message, errorId };
   }
+
+  logImageAction("delete", true, {
+    recipeId,
+    userId: user.id,
+  });
 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${recipeId}`);

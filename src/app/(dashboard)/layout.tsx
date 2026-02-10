@@ -1,26 +1,23 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/providers/Providers";
-import { getUserPreferences, type ThemePreference } from "@/lib/db/user-preferences";
-import { getProfile } from "@/lib/db/profiles";
+import { getCachedUser, getCachedPreferences, getCachedProfile } from "@/lib/db/cached";
+import type { ThemePreference } from "@/lib/db/user-preferences";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Use cached functions to deduplicate with child page fetches
+  const { data: { user } } = await getCachedUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  // Get user preferences for theme and onboarding status
-  const preferencesResult = await getUserPreferences();
+  // Get user preferences for theme and onboarding status (cached)
+  const preferencesResult = await getCachedPreferences();
   const themePreference: ThemePreference = preferencesResult.success
     ? preferencesResult.data.themePreference
     : "system";
@@ -35,8 +32,8 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
-  // Get profile for name display
-  const profileResult = await getProfile();
+  // Get profile for name display (cached)
+  const profileResult = await getCachedProfile();
   const firstName = profileResult.success
     ? profileResult.data.firstName
     : null;

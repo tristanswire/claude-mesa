@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -11,11 +10,9 @@ interface ErrorProps {
 
 /**
  * Generate a short error ID for user reference.
- * Uses digest if available (from server), otherwise generates client-side.
  */
 function generateErrorId(digest?: string): string {
   if (digest) {
-    // Use first 5 chars of digest for consistency
     return `ERR-${digest.substring(0, 5).toLowerCase()}`;
   }
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -26,20 +23,17 @@ function generateErrorId(digest?: string): string {
   return `ERR-${id}`;
 }
 
-export default function DashboardError({ error, reset }: ErrorProps) {
+export default function GlobalError({ error, reset }: ErrorProps) {
   const [copied, setCopied] = useState(false);
-
-  // Generate stable error ID based on digest or random
   const errorId = useMemo(() => generateErrorId(error.digest), [error.digest]);
 
   useEffect(() => {
-    // Log error with correlation ID for debugging
     console.error(
       JSON.stringify({
         timestamp: new Date().toISOString(),
         level: "error",
         tag: "ui",
-        message: "Dashboard error boundary triggered",
+        message: "Global error boundary triggered",
         errorId,
         meta: {
           errorMessage: error.message,
@@ -56,7 +50,6 @@ export default function DashboardError({ error, reset }: ErrorProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for browsers without clipboard API
       const textArea = document.createElement("textarea");
       textArea.value = errorId;
       document.body.appendChild(textArea);
@@ -71,7 +64,7 @@ export default function DashboardError({ error, reset }: ErrorProps) {
   const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center py-16 px-4">
       <div className="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center mb-6">
         <svg
           className="w-8 h-8"
@@ -95,7 +88,7 @@ export default function DashboardError({ error, reset }: ErrorProps) {
         We encountered an unexpected error. Please try again or return to your recipes.
       </p>
 
-      {/* Error ID - always visible for support reference */}
+      {/* Error ID - always visible */}
       <button
         onClick={handleCopyErrorId}
         className="mb-6 px-3 py-1.5 bg-surface-2 rounded-md text-xs font-mono text-muted hover:text-foreground hover:bg-surface-3 transition-colors cursor-pointer flex items-center gap-2"
@@ -123,13 +116,20 @@ export default function DashboardError({ error, reset }: ErrorProps) {
       </button>
 
       <div className="flex items-center gap-4">
-        <Button onClick={reset}>Try again</Button>
-        <Button variant="outline" asChild>
-          <Link href="/recipes">Back to recipes</Link>
-        </Button>
+        <button
+          onClick={reset}
+          className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+        >
+          Try again
+        </button>
+        <Link
+          href="/recipes"
+          className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-border bg-surface text-foreground font-medium hover:bg-surface-2 transition-colors"
+        >
+          Back to recipes
+        </Link>
       </div>
 
-      {/* Development-only: show detailed error info */}
       {isDev && error.message && (
         <div className="mt-8 p-4 bg-surface-2 rounded-lg max-w-xl w-full">
           <p className="text-xs font-mono text-error break-all font-medium mb-2">

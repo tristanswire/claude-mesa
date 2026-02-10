@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getRecipeById } from "@/lib/db/recipes";
-import { getUserPreferences } from "@/lib/db/user-preferences";
+import { getCachedPreferences } from "@/lib/db/cached";
 import { listStacks, getStacksForRecipe } from "@/lib/db/stacks";
 import { getActiveShareForRecipe } from "@/lib/db/recipe-shares";
 import { RecipeDetailView } from "@/components/recipe/RecipeDetailView";
@@ -17,34 +17,64 @@ export default async function RecipeDetailPage({
 }: RecipeDetailPageProps) {
   const { id } = await params;
 
-  // Fetch recipe, user preferences, stacks, and share data in parallel
-  const [recipeResult, preferencesResult, allStacksResult, recipeStacksResult, shareResult] =
-    await Promise.all([
-      getRecipeById(id),
-      getUserPreferences(),
-      listStacks(),
-      getStacksForRecipe(id),
-      getActiveShareForRecipe(id),
-    ]);
+  // Fetch recipe first to check auth status
+  const recipeResult = await getRecipeById(id);
 
+  // Handle auth and error cases before other fetches
   if (!recipeResult.success) {
+    // Not authenticated - redirect to login
+    if (recipeResult.error === "Not authenticated") {
+      redirect(`/login?redirect=/recipes/${id}`);
+    }
+
+    // Recipe not found - show 404
     if (recipeResult.error === "Recipe not found") {
       notFound();
     }
-    // Handle corrupted data or other errors gracefully
+
+    // Permission denied
+    if (recipeResult.error.includes("permission")) {
+      return (
+        <ErrorState
+          title="Access denied"
+          message="You don't have permission to view this recipe."
+          retry={{ label: "Back to recipes", href: "/recipes" }}
+        />
+      );
+    }
+
+    // Corrupted data
+    if (
+      recipeResult.error.includes("corrupted") ||
+      recipeResult.error.includes("invalid")
+    ) {
+      return (
+        <ErrorState
+          title="Unable to display recipe"
+          message="This recipe appears to have corrupted data. Please try editing it or contact support."
+          retry={{ label: "Back to recipes", href: "/recipes" }}
+        />
+      );
+    }
+
+    // Generic error
     return (
       <ErrorState
-        title="Unable to display recipe"
-        message={
-          recipeResult.error.includes("corrupted") ||
-          recipeResult.error.includes("invalid")
-            ? "This recipe appears to have corrupted data. Please try editing it or contact support."
-            : recipeResult.error
-        }
+        title="Unable to load recipe"
+        message={recipeResult.error}
         retry={{ label: "Back to recipes", href: "/recipes" }}
       />
     );
   }
+
+  // Recipe loaded successfully - fetch related data in parallel
+  const [preferencesResult, allStacksResult, recipeStacksResult, shareResult] =
+    await Promise.all([
+      getCachedPreferences(), // Cached - deduplicates with layout fetch
+      listStacks(),
+      getStacksForRecipe(id),
+      getActiveShareForRecipe(id),
+    ]);
 
   const recipe = recipeResult.data;
   const unitSystem = preferencesResult.success

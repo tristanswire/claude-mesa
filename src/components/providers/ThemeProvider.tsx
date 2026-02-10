@@ -37,7 +37,12 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<ThemePreference>(defaultTheme);
+  const [theme, setThemeState] = useState<ThemePreference>(() => {
+    if (typeof window === "undefined") return defaultTheme;
+    const stored = localStorage.getItem("theme-preference") as ThemePreference | null;
+    if (stored && ["light", "dark", "system"].includes(stored)) return stored;
+    return defaultTheme;
+  });
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
 
   // Get system preference
@@ -70,16 +75,11 @@ export function ThemeProvider({
     setResolvedTheme(resolved);
   }, []);
 
-  // Initialize from localStorage
+  // Apply theme on mount
   useEffect(() => {
-    const stored = localStorage.getItem("theme-preference") as ThemePreference | null;
-    if (stored && ["light", "dark", "system"].includes(stored)) {
-      setThemeState(stored);
-      applyTheme(resolveTheme(stored));
-    } else {
-      applyTheme(resolveTheme(defaultTheme));
-    }
-  }, [defaultTheme, resolveTheme, applyTheme]);
+    applyTheme(resolveTheme(theme));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Listen for system preference changes
   useEffect(() => {

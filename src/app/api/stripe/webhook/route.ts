@@ -1,7 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { revalidatePath } from "next/cache";
 import { trackEventForUser } from "@/lib/analytics/events";
+import { logStripeAction, generateErrorId, log } from "@/lib/logger";
 
 // Disable body parsing - we need raw body for signature verification
 export const runtime = "nodejs";
@@ -54,13 +56,25 @@ interface StripeInvoicePayload {
  * - customer.subscription.deleted: Subscription ended
  * - invoice.payment_failed: Payment issue, set past_due
  * - invoice.payment_succeeded: Payment successful, clear past_due
+ *
+ * Response codes:
+ * - 200: Event processed or intentionally skipped (unknown events)
+ * - 400: Signature verification failed (unrecoverable)
+ * - 500: Transient processing error (Stripe should retry)
  */
 export async function POST(request: NextRequest) {
+  let eventId: string | undefined;
+  let eventType: string | undefined;
+
   try {
     // 1. Verify webhook secret is configured
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      console.error("STRIPE_WEBHOOK_SECRET is not configured");
+      const errorId = generateErrorId();
+      logStripeAction("webhook_received", false, {
+        errorId,
+        error: "STRIPE_WEBHOOK_SECRET is not configured",
+      });
       return NextResponse.json(
         { error: "Webhook not configured" },
         { status: 500 }
@@ -72,7 +86,12 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("stripe-signature");
 
     if (!signature) {
-      console.error("Missing stripe-signature header");
+      const errorId = generateErrorId();
+      logStripeAction("webhook_received", false, {
+        errorId,
+        error: "Missing stripe-signature header",
+      });
+      // Return 400 for signature issues - unrecoverable, no retry needed
       return NextResponse.json(
         { error: "Missing signature" },
         { status: 400 }
@@ -84,17 +103,29 @@ export async function POST(request: NextRequest) {
     try {
       event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
+      const errorId = generateErrorId();
       const message = err instanceof Error ? err.message : "Unknown error";
-      console.error("Webhook signature verification failed:", message);
+      logStripeAction("webhook_received", false, {
+        errorId,
+        error: `Signature verification failed: ${message}`,
+      });
+      // Return 400 for signature failures - unrecoverable, no retry needed
       return NextResponse.json(
-        { error: `Webhook signature verification failed: ${message}` },
+        { error: "Webhook signature verification failed" },
         { status: 400 }
       );
     }
 
-    // 4. Handle the event
-    console.log(`Processing webhook event: ${event.type} (${event.id})`);
+    eventId = event.id;
+    eventType = event.type;
 
+    // Log webhook received
+    logStripeAction("webhook_received", true, {
+      eventId: event.id,
+      eventType: event.type,
+    });
+
+    // 4. Handle the event
     switch (event.type) {
       case "checkout.session.completed":
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
@@ -118,16 +149,37 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        // Unknown event types: log and return 200 to prevent retries
+        log.info("stripe", "Unhandled webhook event type", {
+          action: "webhook_skipped",
+          meta: { eventId: event.id, eventType: event.type },
+        });
     }
+
+    // Log successful processing
+    logStripeAction("webhook_processed", true, {
+      eventId: event.id,
+      eventType: event.type,
+    });
 
     // 5. Return success
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Webhook handler error:", error);
-    // Return 200 to prevent Stripe retries for unrecoverable errors
-    // Log the error for investigation
-    return NextResponse.json({ received: true, error: "Internal error logged" });
+    const errorId = generateErrorId();
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    logStripeAction("webhook_processed", false, {
+      eventId,
+      eventType,
+      errorId,
+      error: errorMessage,
+    });
+
+    // Return 500 for processing errors - Stripe should retry
+    return NextResponse.json(
+      { error: "Processing failed" },
+      { status: 500 }
+    );
   }
 }
 
@@ -140,18 +192,27 @@ export async function POST(request: NextRequest) {
  * Called when a customer completes checkout and subscription is created.
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("Handling checkout.session.completed:", session.id);
+  log.info("stripe", "Handling checkout.session.completed", {
+    action: "checkout_completed",
+    meta: { sessionId: session.id },
+  });
 
   // Get user_id from metadata
   const userId = session.metadata?.user_id;
   if (!userId) {
-    console.error("No user_id in checkout session metadata:", session.id);
+    log.warn("stripe", "No user_id in checkout session metadata", {
+      action: "checkout_completed",
+      meta: { sessionId: session.id },
+    });
     return;
   }
 
   // Get subscription details
   if (session.mode !== "subscription" || !session.subscription) {
-    console.log("Not a subscription checkout, skipping");
+    log.info("stripe", "Not a subscription checkout, skipping", {
+      action: "checkout_completed",
+      userId,
+    });
     return;
   }
 
@@ -177,13 +238,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   });
 
   // Track subscription activation (non-blocking)
-  trackEventForUser(userId, "subscription_activated", {
-    plan: "plus",
-  }).catch(() => {
-    // Silently ignore - analytics should never break webhook
-  });
+  try {
+    trackEventForUser(userId, "subscription_activated", {
+      plan: "plus",
+    });
+  } catch {
+    // Analytics should never break webhook
+  }
 
-  console.log(`Checkout completed for user ${userId}, plan set to plus`);
+  logStripeAction("subscription_update", true, {
+    userId,
+    customerId: session.customer as string,
+  });
 }
 
 /**
@@ -191,12 +257,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
  * Called on renewals, plan changes, cancellation scheduled, etc.
  */
 async function handleSubscriptionUpdated(subscription: StripeSubscriptionPayload) {
-  console.log("Handling subscription updated:", subscription.id, subscription.status);
+  log.info("stripe", "Handling subscription updated", {
+    action: "subscription_updated",
+    meta: { subscriptionId: subscription.id, status: subscription.status },
+  });
 
   // Get user_id from subscription metadata or look up by customer
   const userId = await resolveUserId(subscription);
   if (!userId) {
-    console.error("Could not resolve user for subscription:", subscription.id);
+    log.warn("stripe", "Could not resolve user for subscription", {
+      action: "subscription_updated",
+      meta: { subscriptionId: subscription.id },
+    });
     return;
   }
 
@@ -222,7 +294,10 @@ async function handleSubscriptionUpdated(subscription: StripeSubscriptionPayload
     currentPeriodEnd: new Date(periodEnd * 1000),
   });
 
-  console.log(`Subscription updated for user ${userId}: plan=${plan}, status=${effectiveStatus}`);
+  logStripeAction("subscription_update", true, {
+    userId,
+    meta: { plan, status: effectiveStatus },
+  });
 }
 
 /**
@@ -230,11 +305,17 @@ async function handleSubscriptionUpdated(subscription: StripeSubscriptionPayload
  * Called when subscription actually ends (after grace period or immediate cancel).
  */
 async function handleSubscriptionDeleted(subscription: StripeSubscriptionPayload) {
-  console.log("Handling subscription deleted:", subscription.id);
+  log.info("stripe", "Handling subscription deleted", {
+    action: "subscription_deleted",
+    meta: { subscriptionId: subscription.id },
+  });
 
   const userId = await resolveUserId(subscription);
   if (!userId) {
-    console.error("Could not resolve user for subscription:", subscription.id);
+    log.warn("stripe", "Could not resolve user for subscription", {
+      action: "subscription_deleted",
+      meta: { subscriptionId: subscription.id },
+    });
     return;
   }
 
@@ -255,7 +336,10 @@ async function handleSubscriptionDeleted(subscription: StripeSubscriptionPayload
       currentPeriodEnd: periodEnd,
       pastDueSince: null,
     });
-    console.log(`Subscription ended for user ${userId}, reverted to free`);
+    logStripeAction("subscription_update", true, {
+      userId,
+      meta: { plan: "free", status: "inactive" },
+    });
   } else {
     // Still within paid period (shouldn't happen with deleted, but handle gracefully)
     await updateUserBilling(userId, {
@@ -263,7 +347,10 @@ async function handleSubscriptionDeleted(subscription: StripeSubscriptionPayload
       planStatus: "canceled",
       currentPeriodEnd: periodEnd,
     });
-    console.log(`Subscription canceled for user ${userId}, plus until ${periodEnd}`);
+    logStripeAction("subscription_update", true, {
+      userId,
+      meta: { plan: "plus", status: "canceled", periodEnd: periodEnd.toISOString() },
+    });
   }
 }
 
@@ -272,10 +359,16 @@ async function handleSubscriptionDeleted(subscription: StripeSubscriptionPayload
  * Set past_due status and record when it started.
  */
 async function handlePaymentFailed(invoice: StripeInvoicePayload) {
-  console.log("Handling payment failed:", invoice.id);
+  log.info("stripe", "Handling payment failed", {
+    action: "payment_failed",
+    meta: { invoiceId: invoice.id },
+  });
 
   if (!invoice.subscription) {
-    console.log("Invoice not associated with subscription, skipping");
+    log.info("stripe", "Invoice not associated with subscription, skipping", {
+      action: "payment_failed",
+      meta: { invoiceId: invoice.id },
+    });
     return;
   }
 
@@ -285,7 +378,10 @@ async function handlePaymentFailed(invoice: StripeInvoicePayload) {
 
   const userId = await resolveUserId(subscription);
   if (!userId) {
-    console.error("Could not resolve user for invoice:", invoice.id);
+    log.warn("stripe", "Could not resolve user for invoice", {
+      action: "payment_failed",
+      meta: { invoiceId: invoice.id },
+    });
     return;
   }
 
@@ -303,7 +399,10 @@ async function handlePaymentFailed(invoice: StripeInvoicePayload) {
     pastDueSince: prefs?.past_due_since ? undefined : new Date(),
   });
 
-  console.log(`Payment failed for user ${userId}, status set to past_due`);
+  logStripeAction("subscription_update", true, {
+    userId,
+    meta: { status: "past_due" },
+  });
 }
 
 /**
@@ -311,10 +410,16 @@ async function handlePaymentFailed(invoice: StripeInvoicePayload) {
  * Clear past_due status on successful payment.
  */
 async function handlePaymentSucceeded(invoice: StripeInvoicePayload) {
-  console.log("Handling payment succeeded:", invoice.id);
+  log.info("stripe", "Handling payment succeeded", {
+    action: "payment_succeeded",
+    meta: { invoiceId: invoice.id },
+  });
 
   if (!invoice.subscription) {
-    console.log("Invoice not associated with subscription, skipping");
+    log.info("stripe", "Invoice not associated with subscription, skipping", {
+      action: "payment_succeeded",
+      meta: { invoiceId: invoice.id },
+    });
     return;
   }
 
@@ -324,7 +429,10 @@ async function handlePaymentSucceeded(invoice: StripeInvoicePayload) {
 
   const userId = await resolveUserId(subscription);
   if (!userId) {
-    console.error("Could not resolve user for invoice:", invoice.id);
+    log.warn("stripe", "Could not resolve user for invoice", {
+      action: "payment_succeeded",
+      meta: { invoiceId: invoice.id },
+    });
     return;
   }
 
@@ -340,7 +448,10 @@ async function handlePaymentSucceeded(invoice: StripeInvoicePayload) {
     currentPeriodEnd: new Date(periodEnd * 1000),
   });
 
-  console.log(`Payment succeeded for user ${userId}, status set to active`);
+  logStripeAction("subscription_update", true, {
+    userId,
+    meta: { plan: "plus", status: "active" },
+  });
 }
 
 // ============================================================
@@ -408,6 +519,7 @@ interface BillingUpdate {
   stripeSubscriptionId?: string;
   currentPeriodEnd?: Date;
   pastDueSince?: Date | null;
+  meta?: Record<string, unknown>;
 }
 
 async function updateUserBilling(userId: string, updates: BillingUpdate): Promise<void> {
@@ -448,7 +560,19 @@ async function updateUserBilling(userId: string, updates: BillingUpdate): Promis
     .eq("user_id", userId);
 
   if (error) {
-    console.error(`Failed to update billing for user ${userId}:`, error);
+    const errorId = generateErrorId();
+    log.error("stripe", "Failed to update user billing", {
+      errorId,
+      userId,
+      action: "billing_update",
+      meta: { error: error.message },
+    });
     throw error;
   }
+
+  // Revalidate paths that depend on billing/plan status
+  // This ensures users see updated UI after plan changes
+  revalidatePath("/settings");
+  revalidatePath("/upgrade");
+  revalidatePath("/recipes", "layout");
 }

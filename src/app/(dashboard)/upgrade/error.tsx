@@ -9,13 +9,8 @@ interface ErrorProps {
   reset: () => void;
 }
 
-/**
- * Generate a short error ID for user reference.
- * Uses digest if available (from server), otherwise generates client-side.
- */
 function generateErrorId(digest?: string): string {
   if (digest) {
-    // Use first 5 chars of digest for consistency
     return `ERR-${digest.substring(0, 5).toLowerCase()}`;
   }
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -26,20 +21,17 @@ function generateErrorId(digest?: string): string {
   return `ERR-${id}`;
 }
 
-export default function DashboardError({ error, reset }: ErrorProps) {
+export default function UpgradeError({ error, reset }: ErrorProps) {
   const [copied, setCopied] = useState(false);
-
-  // Generate stable error ID based on digest or random
   const errorId = useMemo(() => generateErrorId(error.digest), [error.digest]);
 
   useEffect(() => {
-    // Log error with correlation ID for debugging
     console.error(
       JSON.stringify({
         timestamp: new Date().toISOString(),
         level: "error",
         tag: "ui",
-        message: "Dashboard error boundary triggered",
+        message: "Upgrade error boundary triggered",
         errorId,
         meta: {
           errorMessage: error.message,
@@ -56,7 +48,6 @@ export default function DashboardError({ error, reset }: ErrorProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for browsers without clipboard API
       const textArea = document.createElement("textarea");
       textArea.value = errorId;
       document.body.appendChild(textArea);
@@ -89,13 +80,12 @@ export default function DashboardError({ error, reset }: ErrorProps) {
       </div>
 
       <h1 className="text-2xl font-bold text-foreground mb-2">
-        Something went wrong
+        Problem loading upgrade page
       </h1>
       <p className="text-muted text-center max-w-md mb-4">
-        We encountered an unexpected error. Please try again or return to your recipes.
+        We couldn&apos;t load the upgrade options. Please try again or contact support if this continues.
       </p>
 
-      {/* Error ID - always visible for support reference */}
       <button
         onClick={handleCopyErrorId}
         className="mb-6 px-3 py-1.5 bg-surface-2 rounded-md text-xs font-mono text-muted hover:text-foreground hover:bg-surface-3 transition-colors cursor-pointer flex items-center gap-2"
@@ -129,7 +119,6 @@ export default function DashboardError({ error, reset }: ErrorProps) {
         </Button>
       </div>
 
-      {/* Development-only: show detailed error info */}
       {isDev && error.message && (
         <div className="mt-8 p-4 bg-surface-2 rounded-lg max-w-xl w-full">
           <p className="text-xs font-mono text-error break-all font-medium mb-2">

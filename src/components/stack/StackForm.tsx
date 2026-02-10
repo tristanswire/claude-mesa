@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 import type { FormState } from "@/lib/actions/stacks";
 
 interface StackFormProps {
@@ -22,7 +23,7 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
   return (
     <form action={formAction} className="space-y-6">
       {!state.success && state.error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-error-subtle border border-error/20 text-error px-4 py-3 rounded-lg text-sm">
           {state.error}
         </div>
       )}
@@ -30,7 +31,7 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
       <div>
         <label
           htmlFor="name"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-foreground"
         >
           Name *
         </label>
@@ -41,14 +42,14 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
           required
           defaultValue={stack?.name}
           placeholder="e.g., Breakfast, Quick Dinners, Holiday Favorites"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
         />
       </div>
 
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-foreground"
         >
           Description
         </label>
@@ -58,24 +59,17 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
           rows={3}
           defaultValue={stack?.description || ""}
           placeholder="Optional description for this stack"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
         />
       </div>
 
-      <div className="flex justify-end space-x-4">
-        <Link
-          href="/stacks"
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
+      <div className="flex justify-end gap-3">
+        <Button variant="outline" asChild>
+          <Link href={stack ? `/stacks/${stack.id}` : "/stacks"}>Cancel</Link>
+        </Button>
+        <Button type="submit" disabled={isPending} isLoading={isPending}>
           {isPending ? "Saving..." : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );

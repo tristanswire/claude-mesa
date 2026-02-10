@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getRecipeById } from "@/lib/db/recipes";
 import { RecipeForm } from "@/components/recipe/RecipeForm";
 import { RecipeImageUpload } from "@/components/recipe/RecipeImageUpload";
 import { DeleteRecipeButton } from "@/components/recipe/DeleteRecipeButton";
 import { updateRecipeAction } from "@/lib/actions/recipes";
 import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { RECIPE_PAGE_MAX_WIDTH } from "@/components/recipe/RecipePageContainer";
 
 interface EditRecipePageProps {
@@ -17,12 +18,24 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
   const result = await getRecipeById(id);
 
   if (!result.success) {
+    // Not authenticated - redirect to login
+    if (result.error === "Not authenticated") {
+      redirect(`/login?redirect=/recipes/${id}/edit`);
+    }
+
+    // Recipe not found - show 404
     if (result.error === "Recipe not found") {
       notFound();
     }
+
+    // Permission denied or other errors
     return (
-      <div className="bg-error-subtle border border-error/20 text-error px-4 py-3 rounded-lg">
-        {result.error}
+      <div className={RECIPE_PAGE_MAX_WIDTH}>
+        <ErrorState
+          title={result.error.includes("permission") ? "Access denied" : "Unable to edit recipe"}
+          message={result.error}
+          retry={{ label: "Back to recipes", href: "/recipes" }}
+        />
       </div>
     );
   }

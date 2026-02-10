@@ -1,7 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { getUserPreferences } from "@/lib/db/user-preferences";
-import { getProfile } from "@/lib/db/profiles";
-import { getEntitlementsForUser } from "@/lib/db/entitlements";
+import { getCachedUser, getCachedPreferences, getCachedProfile, getCachedEntitlements } from "@/lib/db/cached";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { ThemeSelector } from "@/components/settings/ThemeSelector";
 import { UnitSelector } from "@/components/settings/UnitSelector";
@@ -11,22 +8,20 @@ import { FeedbackForm } from "@/components/settings/FeedbackForm";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Use cached functions - these deduplicate with layout fetches
+  const { data: { user } } = await getCachedUser();
 
-  const preferencesResult = await getUserPreferences();
+  const preferencesResult = await getCachedPreferences();
   const preferences = preferencesResult.success
     ? preferencesResult.data
     : { preferredUnitSystem: "original" as const, themePreference: "system" as const };
 
-  const profileResult = await getProfile();
+  const profileResult = await getCachedProfile();
   const profile = profileResult.success
     ? profileResult.data
     : { firstName: null, lastName: null };
 
-  const entitlementsResult = await getEntitlementsForUser();
+  const entitlementsResult = await getCachedEntitlements();
   const entitlements = entitlementsResult.success
     ? entitlementsResult.data
     : {

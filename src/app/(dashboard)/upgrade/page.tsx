@@ -1,4 +1,5 @@
-import { getEntitlementsForUser, getRecipeCount, getPlanDisplayInfo } from "@/lib/db/entitlements";
+import { getCachedEntitlements } from "@/lib/db/cached";
+import { getRecipeCount, getPlanDisplayInfo } from "@/lib/db/entitlements";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { UpgradeButton } from "@/components/billing/UpgradeButton";
@@ -58,7 +59,7 @@ const plans = [
 
 export default async function UpgradePage() {
   const [entitlementsResult, recipeCount] = await Promise.all([
-    getEntitlementsForUser(),
+    getCachedEntitlements(), // Cached - deduplicates with settings page fetch
     getRecipeCount(),
   ]);
 
@@ -85,7 +86,7 @@ export default async function UpgradePage() {
       />
 
       {/* Current usage card */}
-      <div className="bg-surface rounded-xl p-6 mb-8">
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-6 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -128,7 +129,7 @@ export default async function UpgradePage() {
           return (
             <div
               key={plan.id}
-              className={`relative bg-surface rounded-xl p-6 ${
+              className={`relative bg-surface rounded-xl border border-border shadow-sm p-6 ${
                 isPremium
                   ? "ring-2 ring-accent"
                   : isCurrent

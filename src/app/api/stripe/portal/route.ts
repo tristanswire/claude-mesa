@@ -1,12 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { logStripeAction, generateErrorId } from "@/lib/logger";
 
 export async function POST() {
+  let userId: string | undefined;
+
   try {
     // 1. Verify Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
-      console.error("STRIPE_SECRET_KEY is not configured");
+      const errorId = generateErrorId();
+      logStripeAction("portal_create", false, {
+        errorId,
+        error: "STRIPE_SECRET_KEY is not configured",
+      });
       return NextResponse.json(
         { error: "Billing is not configured" },
         { status: 500 }
@@ -20,8 +27,10 @@ export async function POST() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 });
     }
+
+    userId = user.id;
 
     // 3. Get stripe_customer_id from user_preferences
     const { data, error } = await supabase
@@ -31,7 +40,12 @@ export async function POST() {
       .single();
 
     if (error) {
-      console.error("Error fetching user preferences:", error);
+      const errorId = generateErrorId();
+      logStripeAction("portal_create", false, {
+        userId: user.id,
+        errorId,
+        error: `Failed to fetch preferences: ${error.message}`,
+      });
       return NextResponse.json(
         { error: "Failed to fetch billing information" },
         { status: 500 }
@@ -56,10 +70,22 @@ export async function POST() {
       return_url: `${returnUrl}/settings`,
     });
 
+    logStripeAction("portal_create", true, {
+      userId: user.id,
+      customerId: data.stripe_customer_id,
+    });
+
     // 5. Return portal URL
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Error creating portal session:", error);
+    const errorId = generateErrorId();
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    logStripeAction("portal_create", false, {
+      userId,
+      errorId,
+      error: errorMessage,
+    });
 
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
@@ -69,7 +95,7 @@ export async function POST() {
     }
 
     return NextResponse.json(
-      { error: "Something went wrong" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

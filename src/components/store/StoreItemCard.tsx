@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import type { StoreItem } from "@/lib/db/store";
 import { Badge } from "@/components/ui/Badge";
@@ -13,10 +14,12 @@ export function StoreItemCard({ item, compact = false }: StoreItemCardProps) {
       {/* Product Image */}
       <div className={`relative bg-surface-2 ${compact ? "h-32" : "h-40"}`}>
         {item.imageUrl ? (
-          <img
+          <Image
             src={item.imageUrl}
             alt={item.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes={compact ? "(max-width: 640px) 50vw, 33vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

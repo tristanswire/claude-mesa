@@ -6,7 +6,7 @@ import { useTheme, type ThemePreference } from "@/components/providers/ThemeProv
 import { updateThemePreferenceAction } from "@/lib/actions/preferences";
 
 interface ThemeSelectorProps {
-  initialValue: ThemePreference;
+  initialValue?: ThemePreference;
 }
 
 const themeOptions = [
@@ -15,7 +15,7 @@ const themeOptions = [
   { value: "system", label: "System" },
 ];
 
-export function ThemeSelector({ initialValue }: ThemeSelectorProps) {
+export function ThemeSelector({}: ThemeSelectorProps) {
   const { theme, setTheme } = useTheme();
   const [isPending, startTransition] = useTransition();
 

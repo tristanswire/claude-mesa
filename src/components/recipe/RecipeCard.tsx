@@ -26,7 +26,7 @@ export function RecipeCard({ recipe, stacks = [], href }: RecipeCardProps) {
   return (
     <Link
       href={linkHref}
-      className="group block bg-surface rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="group relative block bg-surface rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
     >
       {/* 16:9 Image Area with error handling */}
       <RecipeCardImage src={recipe.imageUrl} title={recipe.title} />

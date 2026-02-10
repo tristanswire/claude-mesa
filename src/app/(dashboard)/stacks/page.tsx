@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { listStacks } from "@/lib/db/stacks";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
