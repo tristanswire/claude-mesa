@@ -61,7 +61,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               RECIPE COMPANION
             </p>
-            <h1 className="font-bold text-foreground leading-tight" style={{ fontSize: "clamp(2rem, 4.5vw, 3rem)", maxWidth: "480px" }}>
+            <h1 className="text-foreground leading-tight" style={{ fontSize: "clamp(2rem, 4.5vw, 3rem)", maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
               Dinner shouldn&apos;t be this hard.
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
@@ -409,7 +409,7 @@ export default async function HomePage() {
         className="flex flex-col items-center text-center px-6"
         style={{ background: "#f0e0d0", paddingTop: "80px", paddingBottom: "80px" }}
       >
-        <h2 className="font-bold text-foreground leading-tight" style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", maxWidth: "560px" }}>
+        <h2 className="text-foreground leading-tight" style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", maxWidth: "560px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
           Your family&apos;s recipes deserve a real home.
         </h2>
         <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
