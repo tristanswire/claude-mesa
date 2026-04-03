@@ -27,7 +27,7 @@ export default async function HomePage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+      <main className="flex flex-col items-center px-6 pt-16 pb-16 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight max-w-xl">
           Every meal.<br />Everyone together.
         </h1>
@@ -45,9 +45,9 @@ export default async function HomePage() {
       </main>
 
       {/* Features */}
-      <section className="px-6 py-16 max-w-4xl mx-auto w-full">
+      <section className="px-6 pt-0 pb-16 max-w-4xl mx-auto w-full">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M2 4h12M2 8h8M2 12h5" stroke="#b34519" strokeWidth="1.75" strokeLinecap="round"/>
@@ -58,7 +58,7 @@ export default async function HomePage() {
               Import from any URL or paste from anywhere. Your recipes, organized.
             </p>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <circle cx="8" cy="8" r="6" stroke="#b34519" strokeWidth="1.75"/>
@@ -70,7 +70,7 @@ export default async function HomePage() {
               Ingredients scale automatically. No more mental math mid-cook.
             </p>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M8 2C5.8 2 4 3.8 4 6c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z" stroke="#b34519" strokeWidth="1.75" strokeLinejoin="round"/>
