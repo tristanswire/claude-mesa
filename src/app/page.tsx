@@ -53,7 +53,7 @@ export default async function HomePage() {
       {/* ─────────────────────────────────────────────────────────────
           Section 2 — Hero (left text / right screenshot)
       ───────────────────────────────────────────────────────────── */}
-      <section className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
+      <section className={SECTION} style={{ ...MAX_W, paddingTop: "48px", paddingBottom: "64px" }}>
         <div className="flex flex-col-reverse sm:flex-row items-center gap-10 sm:gap-12">
 
           {/* Left: text */}
@@ -61,7 +61,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               RECIPE COMPANION
             </p>
-            <h1 className="text-4xl sm:text-6xl text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+            <h1 className="text-4xl md:text-5xl lg:text-7xl text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
               Dinner shouldn&apos;t be this hard.
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
@@ -101,7 +101,7 @@ export default async function HomePage() {
       {/* ─────────────────────────────────────────────────────────────
           Section 3 — How It Works
       ───────────────────────────────────────────────────────────── */}
-      <section className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
+      <section className={SECTION} style={{ ...MAX_W, paddingTop: "64px", paddingBottom: "80px" }}>
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           HOW IT WORKS
         </p>
