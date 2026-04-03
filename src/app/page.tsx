@@ -16,7 +16,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#fffbf4" }}>
       {/* Nav */}
-      <header className="flex items-center justify-between px-6 py-5 max-w-4xl mx-auto w-full">
+      <header className="flex items-center justify-between px-6 py-5 mx-auto w-full" style={{ maxWidth: "960px" }}>
         <span className="text-xl font-bold text-primary">Mesa</span>
         <Link
           href="/login"
