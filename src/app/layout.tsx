@@ -50,7 +50,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Mesa" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="apple-touch-startup-image" href="/icons/apple-splash.png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="../../public/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
         <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
         <script
