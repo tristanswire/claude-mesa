@@ -105,7 +105,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           HOW IT WORKS
         </p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center mb-12">
+        <h2 className="text-2xl sm:text-3xl text-foreground text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           From scattered to sorted in minutes.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -141,9 +141,12 @@ export default async function HomePage() {
           Section 4 — Problem
       ───────────────────────────────────────────────────────────── */}
       <section className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
-        <p className="text-xs font-semibold tracking-widest text-center mb-10" style={{ color: "#b34519" }}>
+        <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SOUND FAMILIAR?
         </p>
+        <h2 className="text-2xl sm:text-3xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+          Sound Familiar?
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="flex flex-col items-center text-center gap-4" style={{ ...CARD, padding: "32px" }}>
             <div style={ICON_WRAP}>
@@ -170,9 +173,12 @@ export default async function HomePage() {
           Section 5 — Features
       ───────────────────────────────────────────────────────────── */}
       <section className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
-        <p className="text-xs font-semibold tracking-widest text-center mb-10" style={{ color: "#b34519" }}>
+        <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           EVERYTHING IN ONE PLACE
         </p>
+        <h2 className="text-2xl sm:text-3xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+          Everything in one place.
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="flex flex-col items-center gap-3 text-center" style={{ ...CARD, padding: "28px" }}>
             <div style={ICON_WRAP}>
@@ -240,7 +246,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               WHY MESA EXISTS
             </p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6">
+            <h2 className="text-2xl sm:text-3xl text-foreground mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
               Built out of frustration.
             </h2>
             <div className="flex flex-col gap-4 text-sm text-muted-foreground leading-relaxed" style={{ maxWidth: "500px" }}>
@@ -278,9 +284,12 @@ export default async function HomePage() {
           NOTE: Replace placeholder quotes with real user testimonials before public launch
       ───────────────────────────────────────────────────────────── */}
       <section className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
-        <p className="text-xs font-semibold tracking-widest text-center mb-10" style={{ color: "#b34519" }}>
+        <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           WHAT FAMILIES ARE SAYING
         </p>
+        <h2 className="text-2xl sm:text-3xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+          What families are saying.
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
             {
@@ -330,6 +339,9 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SIMPLE PRICING
         </p>
+        <h2 className="text-2xl sm:text-3xl text-foreground text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+          Simple pricing.
+        </h2>
         <p className="text-sm text-muted-foreground text-center mb-12">
           Start free. Upgrade when you&apos;re ready.
         </p>
