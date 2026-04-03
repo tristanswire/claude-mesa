@@ -15,8 +15,8 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero zone — nav + hero on warm background */}
-      <div style={{ background: "#f0e0d0", borderBottom: "1px solid rgba(179, 69, 25, 0.2)" }}>
+      {/* Hero zone */}
+      <div style={{ background: "#fffbf4" }}>
         {/* Nav */}
         <header className="flex items-center justify-between px-6 py-5 max-w-4xl mx-auto w-full">
           <span className="text-xl font-bold text-primary">Mesa</span>
