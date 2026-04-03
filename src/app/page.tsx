@@ -36,13 +36,16 @@ export default async function HomePage() {
           <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-md leading-relaxed mx-auto">
             Mesa helps busy parents plan meals, save recipes, and bring the family to the table — without the chaos.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto mx-auto sm:justify-center">
-            <Button asChild size="lg" className="w-full sm:w-auto sm:min-w-[160px]">
-              <Link href="/register">Get Started Free</Link>
+          <div className="mt-8 flex flex-col items-center mx-auto" style={{ gap: "12px", maxWidth: "280px" }}>
+            <Button asChild size="lg" className="w-full">
+              <Link href="/register">Start for Free</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto sm:min-w-[160px]">
-              <Link href="/login">Sign In</Link>
-            </Button>
+            <Link
+              href="/login"
+              className="text-sm text-muted-foreground hover:underline transition-colors"
+            >
+              Sign In
+            </Link>
           </div>
 
           {/* Feature cards — 40px below CTAs */}
