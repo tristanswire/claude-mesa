@@ -53,11 +53,11 @@ export default async function HomePage() {
       {/* ─────────────────────────────────────────────────────────────
           Section 2 — Hero (left text / right screenshot)
       ───────────────────────────────────────────────────────────── */}
-      <section className={SECTION} style={{ ...MAX_W, paddingTop: "48px", paddingBottom: "64px" }}>
+      <section className={SECTION} style={{ ...MAX_W, paddingTop: "48px", paddingBottom: "48px" }}>
         <div className="flex flex-col-reverse sm:flex-row items-center gap-10 sm:gap-12">
 
           {/* Left: text */}
-          <div className="flex flex-col items-start flex-1 min-w-0">
+          <div className="flex flex-col items-start justify-center flex-1 min-w-0">
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               RECIPE COMPANION
             </p>
