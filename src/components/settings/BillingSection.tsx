@@ -29,7 +29,7 @@ export function BillingSection({
 
   const isPastDue = planStatus === "past_due";
   const isCanceled = planStatus === "canceled";
-  const hasSubscription = plan !== "free" && stripeCustomerId;
+  const hasSubscription = plan !== "free";
 
   const handleManageBilling = async () => {
     setIsLoading(true);
@@ -121,29 +121,38 @@ export function BillingSection({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 pt-2">
-        {plan === "free" ? (
-          <Button asChild>
-            <Link href="/upgrade">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Upgrade to Plus
-            </Link>
-          </Button>
-        ) : hasSubscription ? (
-          <Button
-            variant="outline"
-            onClick={handleManageBilling}
-            disabled={isLoading}
-            isLoading={isLoading}
-          >
-            {!isLoading && <ExternalLink className="h-4 w-4 mr-2" />}
-            {isPastDue ? "Fix payment" : "Manage billing"}
-          </Button>
-        ) : (
-          // Plus user without Stripe customer (e.g., manually set)
-          <Button asChild variant="outline">
-            <Link href="/upgrade">View plans</Link>
-          </Button>
+      <div className="flex flex-col gap-3 pt-2">
+        <div className="flex items-center gap-3">
+          {plan === "free" ? (
+            <Button asChild>
+              <Link href="/upgrade">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Upgrade to Plus
+              </Link>
+            </Button>
+          ) : hasSubscription ? (
+            <Button
+              variant="outline"
+              onClick={handleManageBilling}
+              disabled={isLoading}
+              isLoading={isLoading}
+            >
+              {!isLoading && <ExternalLink className="h-4 w-4 mr-2" />}
+              {isPastDue ? "Fix payment" : "Manage subscription"}
+            </Button>
+          ) : (
+            // Plus user without Stripe customer (e.g., manually set)
+            <Button asChild variant="outline">
+              <Link href="/upgrade">View plans</Link>
+            </Button>
+          )}
+        </div>
+
+        {/* Cancellation note for active Plus subscribers */}
+        {hasSubscription && !isCanceled && !isPastDue && (
+          <p className="text-xs text-muted">
+            You can cancel or change your plan anytime. If you cancel, you&apos;ll keep Plus access until the end of your billing period.
+          </p>
         )}
       </div>
     </div>

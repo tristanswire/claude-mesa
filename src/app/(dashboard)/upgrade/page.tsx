@@ -2,60 +2,7 @@ import { getCachedEntitlements } from "@/lib/db/cached";
 import { getRecipeCount, getPlanDisplayInfo } from "@/lib/db/entitlements";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
-import { UpgradeButton } from "@/components/billing/UpgradeButton";
-import { ManageBillingButton } from "@/components/billing/ManageBillingButton";
-
-const plans = [
-  {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Everything you need to get started",
-    features: [
-      "Up to 25 recipes",
-      "Import from URLs",
-      "Paste text import",
-      "Unit conversion",
-      "Organize with stacks",
-      "Share recipes",
-    ],
-    cta: "Current plan",
-    upgradeable: false,
-  },
-  {
-    id: "plus",
-    name: "Plus",
-    price: "$5",
-    period: "per month",
-    description: "For the dedicated home cook",
-    features: [
-      "Unlimited recipes",
-      "Everything in Free",
-      "Priority support",
-      "Early access to features",
-    ],
-    cta: "Upgrade to Plus",
-    upgradeable: true,
-    highlighted: true,
-  },
-  {
-    id: "ai",
-    name: "AI",
-    price: "$15",
-    period: "per month",
-    description: "Your personal cooking assistant",
-    features: [
-      "Everything in Plus",
-      "AI recipe suggestions",
-      "Smart ingredient substitutions",
-      "Meal planning assistant",
-      "Nutritional analysis",
-    ],
-    cta: "Coming soon",
-    upgradeable: false,
-  },
-];
+import { PricingSection } from "@/components/billing/PricingSection";
 
 export default async function UpgradePage() {
   const [entitlementsResult, recipeCount] = await Promise.all([
@@ -74,8 +21,11 @@ export default async function UpgradePage() {
     : null;
 
   const planInfo = getPlanDisplayInfo(currentPlan);
-  const hasSubscription = currentPlan !== "free" && stripeCustomerId;
+  const hasSubscription = currentPlan !== "free" && stripeCustomerId !== null;
   const usagePercent = recipeLimit !== null ? Math.round((recipeCount / recipeLimit) * 100) : 0;
+
+  const monthlyPriceId = process.env.STRIPE_PRICE_ID_PLUS_MONTHLY ?? "";
+  const yearlyPriceId = process.env.STRIPE_PRICE_ID_PLUS_YEARLY ?? "";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -120,126 +70,13 @@ export default async function UpgradePage() {
         </div>
       </div>
 
-      {/* Pricing cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {plans.map((plan) => {
-          const isCurrent = plan.id === currentPlan;
-          const isPremium = plan.highlighted;
-
-          return (
-            <div
-              key={plan.id}
-              className={`relative bg-surface rounded-xl border border-border shadow-sm p-6 ${
-                isPremium
-                  ? "ring-2 ring-accent"
-                  : isCurrent
-                  ? "ring-2 ring-primary"
-                  : ""
-              }`}
-            >
-              {/* Badges */}
-              <div className="absolute -top-3 left-4 right-4 flex justify-between items-center">
-                {isPremium && (
-                  <Badge variant="accent">Recommended</Badge>
-                )}
-                {isCurrent && !isPremium && (
-                  <Badge variant="primary">Current</Badge>
-                )}
-                {isCurrent && isPremium && (
-                  <Badge variant="primary">Current</Badge>
-                )}
-                {!isCurrent && !isPremium && <span />}
-              </div>
-
-              <div className="pt-2">
-                <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                <div className="mt-2 flex items-baseline">
-                  <span className="text-3xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  <span className="text-muted ml-1">/{plan.period}</span>
-                </div>
-                <p className="mt-2 text-sm text-muted">{plan.description}</p>
-
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <svg
-                        className={`h-5 w-5 flex-shrink-0 ${
-                          isPremium ? "text-accent" : "text-success"
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-sm text-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.upgradeable && !isCurrent ? (
-                  <UpgradeButton
-                    planId={plan.id}
-                    className={`mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                      isPremium
-                        ? "bg-accent text-accent-foreground hover:bg-accent/90"
-                        : "bg-primary text-primary-foreground hover:bg-primary-hover"
-                    }`}
-                  >
-                    {plan.cta}
-                  </UpgradeButton>
-                ) : isCurrent && hasSubscription ? (
-                  <ManageBillingButton
-                    className="mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors bg-surface-2 text-foreground hover:bg-surface-3"
-                  >
-                    Manage billing
-                  </ManageBillingButton>
-                ) : (
-                  <button
-                    disabled
-                    className="mt-6 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors bg-surface-2 text-muted cursor-not-allowed"
-                  >
-                    {isCurrent ? "Current plan" : plan.cta}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* AI tier coming soon notice */}
-      <div className="bg-accent-subtle border border-accent/20 rounded-xl p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">
-          AI features coming soon
-        </h3>
-        <p className="text-sm text-muted max-w-md mx-auto">
-          We&apos;re working on AI-powered recipe suggestions, smart substitutions,
-          and meal planning. Upgrade to Plus now and you&apos;ll get early access.
-        </p>
-      </div>
+      {/* Pricing toggle + cards */}
+      <PricingSection
+        currentPlan={currentPlan}
+        hasSubscription={hasSubscription}
+        monthlyPriceId={monthlyPriceId}
+        yearlyPriceId={yearlyPriceId}
+      />
     </div>
   );
 }

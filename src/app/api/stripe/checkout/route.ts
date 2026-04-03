@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { trackEventAsync } from "@/lib/analytics/events";
 import { logStripeAction, generateErrorId } from "@/lib/logger";
 
-export async function POST() {
+export async function POST(req: Request) {
   let userId: string | undefined;
 
   try {
@@ -21,11 +21,14 @@ export async function POST() {
       );
     }
 
-    if (!process.env.STRIPE_PRICE_ID_PLUS) {
+    const monthlyPriceId = process.env.STRIPE_PRICE_ID_PLUS_MONTHLY;
+    const yearlyPriceId = process.env.STRIPE_PRICE_ID_PLUS_YEARLY;
+
+    if (!monthlyPriceId || !yearlyPriceId) {
       const errorId = generateErrorId();
       logStripeAction("checkout_create", false, {
         errorId,
-        error: "STRIPE_PRICE_ID_PLUS is not configured",
+        error: "STRIPE_PRICE_ID_PLUS_MONTHLY or STRIPE_PRICE_ID_PLUS_YEARLY is not configured",
       });
       return NextResponse.json(
         { error: "Pricing is not configured" },
@@ -33,7 +36,18 @@ export async function POST() {
       );
     }
 
-    // 2. Get authenticated user
+    // 2. Validate priceId from request body
+    const body = await req.json().catch(() => ({}));
+    const { priceId } = body as { priceId?: string };
+
+    if (!priceId || (priceId !== monthlyPriceId && priceId !== yearlyPriceId)) {
+      return NextResponse.json(
+        { error: "Invalid price selection" },
+        { status: 400 }
+      );
+    }
+
+    // 3. Get authenticated user
     const supabase = await createClient();
     const {
       data: { user },
@@ -113,7 +127,7 @@ export async function POST() {
       mode: "subscription",
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID_PLUS,
+          price: priceId,
           quantity: 1,
         },
       ],

@@ -197,59 +197,94 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     meta: { sessionId: session.id },
   });
 
-  // Get user_id from metadata
-  const userId = session.metadata?.user_id;
-  if (!userId) {
-    log.warn("stripe", "No user_id in checkout session metadata", {
-      action: "checkout_completed",
-      meta: { sessionId: session.id },
-    });
-    return;
-  }
+  try {
+    // Get user_id from metadata
+    const userId = session.metadata?.user_id;
+    if (!userId) {
+      log.warn("stripe", "No user_id in checkout session metadata", {
+        action: "checkout_completed",
+        meta: { sessionId: session.id },
+      });
+      return;
+    }
 
-  // Get subscription details
-  if (session.mode !== "subscription" || !session.subscription) {
-    log.info("stripe", "Not a subscription checkout, skipping", {
+    // Get subscription details
+    if (session.mode !== "subscription" || !session.subscription) {
+      log.info("stripe", "Not a subscription checkout, skipping", {
+        action: "checkout_completed",
+        userId,
+      });
+      return;
+    }
+
+    // Fetch full subscription object
+    const subscriptionResponse = await getStripe().subscriptions.retrieve(
+      session.subscription as string
+    );
+
+    // Extract billing interval before casting to our simpler type
+    const rawInterval = subscriptionResponse.items?.data?.[0]?.price?.recurring?.interval;
+    const planInterval: "month" | "year" | null =
+      rawInterval === "year" ? "year" : rawInterval === "month" ? "month" : null;
+
+    // Cast to our payload type which matches actual API response
+    const subscription = subscriptionResponse as unknown as StripeSubscriptionPayload;
+
+    // Get period end from subscription items (v20 SDK change)
+    const periodEnd = subscription.current_period_end ||
+      subscription.items?.data?.[0]?.current_period_end ||
+      Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Fallback: 30 days
+
+    log.info("stripe", "checkout.session.completed: updating billing", {
       action: "checkout_completed",
       userId,
+      meta: {
+        customerId: typeof session.customer === "string" ? session.customer : null,
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        planInterval,
+        periodEnd: new Date(periodEnd * 1000).toISOString(),
+      },
     });
-    return;
-  }
 
-  // Fetch full subscription object
-  const subscriptionResponse = await getStripe().subscriptions.retrieve(
-    session.subscription as string
-  );
-  // Cast to our payload type which matches actual API response
-  const subscription = subscriptionResponse as unknown as StripeSubscriptionPayload;
-
-  // Get period end from subscription items (v20 SDK change)
-  const periodEnd = subscription.current_period_end ||
-    subscription.items?.data?.[0]?.current_period_end ||
-    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Fallback: 30 days
-
-  await updateUserBilling(userId, {
-    plan: "plus",
-    planStatus: mapStripeStatus(subscription.status),
-    stripeCustomerId: session.customer as string,
-    stripeSubscriptionId: subscription.id,
-    currentPeriodEnd: new Date(periodEnd * 1000),
-    pastDueSince: null, // Clear any past_due state
-  });
-
-  // Track subscription activation (non-blocking)
-  try {
-    trackEventForUser(userId, "subscription_activated", {
+    await updateUserBilling(userId, {
       plan: "plus",
+      planStatus: mapStripeStatus(subscription.status),
+      planInterval,
+      stripeCustomerId: session.customer as string,
+      stripeSubscriptionId: subscription.id,
+      currentPeriodEnd: new Date(periodEnd * 1000),
+      pastDueSince: null, // Clear any past_due state
     });
-  } catch {
-    // Analytics should never break webhook
-  }
 
-  logStripeAction("subscription_update", true, {
-    userId,
-    customerId: session.customer as string,
-  });
+    // Track subscription activation (non-blocking)
+    try {
+      trackEventForUser(userId, "subscription_activated", {
+        plan: "plus",
+      });
+    } catch {
+      // Analytics should never break webhook
+    }
+
+    logStripeAction("subscription_update", true, {
+      userId,
+      customerId: session.customer as string,
+    });
+  } catch (err) {
+    const errorId = generateErrorId();
+    const message = err instanceof Error ? err.message : String(err);
+    log.error("stripe", "checkout.session.completed handler threw", {
+      errorId,
+      action: "checkout_completed",
+      meta: {
+        sessionId: session.id,
+        customerId: typeof session.customer === "string" ? session.customer : null,
+        subscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+        error: message,
+      },
+    });
+    throw err;
+  }
 }
 
 /**
@@ -262,42 +297,78 @@ async function handleSubscriptionUpdated(subscription: StripeSubscriptionPayload
     meta: { subscriptionId: subscription.id, status: subscription.status },
   });
 
-  // Get user_id from subscription metadata or look up by customer
-  const userId = await resolveUserId(subscription);
-  if (!userId) {
-    log.warn("stripe", "Could not resolve user for subscription", {
+  try {
+    // "incomplete" subscriptions are payment-pending — checkout.session.completed
+    // handles the upgrade. Processing here would incorrectly set plan = "free".
+    if (subscription.status === "incomplete" || subscription.status === "incomplete_expired") {
+      log.info("stripe", "Skipping incomplete subscription — checkout.session.completed will handle upgrade", {
+        action: "subscription_updated",
+        meta: { subscriptionId: subscription.id, status: subscription.status },
+      });
+      return;
+    }
+
+    // Get user_id from subscription metadata or look up by customer
+    const userId = await resolveUserId(subscription);
+    if (!userId) {
+      log.warn("stripe", "Could not resolve user for subscription", {
+        action: "subscription_updated",
+        meta: { subscriptionId: subscription.id },
+      });
+      return;
+    }
+
+    const status = mapStripeStatus(subscription.status);
+
+    // Determine plan based on status
+    // If canceled but not yet ended, keep plus until period end
+    const isActiveSubscription = ["active", "trialing", "past_due"].includes(subscription.status);
+    const plan = isActiveSubscription ? "plus" : "free";
+
+    // Check if cancellation is scheduled (cancel_at_period_end)
+    const effectiveStatus = subscription.cancel_at_period_end ? "canceled" : status;
+
+    // Get period end from subscription
+    const periodEnd = subscription.current_period_end ||
+      subscription.items?.data?.[0]?.current_period_end ||
+      Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+
+    log.info("stripe", "customer.subscription event: updating billing", {
       action: "subscription_updated",
-      meta: { subscriptionId: subscription.id },
+      userId,
+      meta: {
+        subscriptionId: subscription.id,
+        plan,
+        status: effectiveStatus,
+        periodEnd: new Date(periodEnd * 1000).toISOString(),
+      },
     });
-    return;
+
+    await updateUserBilling(userId, {
+      plan,
+      planStatus: effectiveStatus,
+      stripeSubscriptionId: subscription.id,
+      currentPeriodEnd: new Date(periodEnd * 1000),
+    });
+
+    logStripeAction("subscription_update", true, {
+      userId,
+      meta: { plan, status: effectiveStatus },
+    });
+  } catch (err) {
+    const errorId = generateErrorId();
+    const message = err instanceof Error ? err.message : String(err);
+    log.error("stripe", "customer.subscription handler threw", {
+      errorId,
+      action: "subscription_updated",
+      meta: {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        error: message,
+      },
+    });
+    throw err;
   }
-
-  const status = mapStripeStatus(subscription.status);
-
-  // Determine plan based on status
-  // If canceled but not yet ended, keep plus until period end
-  const isActiveSubscription = ["active", "trialing", "past_due"].includes(subscription.status);
-  const plan = isActiveSubscription ? "plus" : "free";
-
-  // Check if cancellation is scheduled (cancel_at_period_end)
-  const effectiveStatus = subscription.cancel_at_period_end ? "canceled" : status;
-
-  // Get period end from subscription
-  const periodEnd = subscription.current_period_end ||
-    subscription.items?.data?.[0]?.current_period_end ||
-    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
-
-  await updateUserBilling(userId, {
-    plan,
-    planStatus: effectiveStatus,
-    stripeSubscriptionId: subscription.id,
-    currentPeriodEnd: new Date(periodEnd * 1000),
-  });
-
-  logStripeAction("subscription_update", true, {
-    userId,
-    meta: { plan, status: effectiveStatus },
-  });
 }
 
 /**
@@ -415,43 +486,76 @@ async function handlePaymentSucceeded(invoice: StripeInvoicePayload) {
     meta: { invoiceId: invoice.id },
   });
 
-  if (!invoice.subscription) {
-    log.info("stripe", "Invoice not associated with subscription, skipping", {
+  try {
+    if (!invoice.subscription) {
+      log.info("stripe", "Invoice not associated with subscription, skipping", {
+        action: "payment_succeeded",
+        meta: { invoiceId: invoice.id },
+      });
+      return;
+    }
+
+    // Get subscription to find user
+    const subscriptionResponse = await getStripe().subscriptions.retrieve(invoice.subscription);
+
+    // Extract billing interval before casting to our simpler type
+    const rawInterval = subscriptionResponse.items?.data?.[0]?.price?.recurring?.interval;
+    const planInterval: "month" | "year" | null =
+      rawInterval === "year" ? "year" : rawInterval === "month" ? "month" : null;
+
+    const subscription = subscriptionResponse as unknown as StripeSubscriptionPayload;
+
+    const userId = await resolveUserId(subscription);
+    if (!userId) {
+      log.warn("stripe", "Could not resolve user for invoice", {
+        action: "payment_succeeded",
+        meta: { invoiceId: invoice.id, subscriptionId: subscription.id },
+      });
+      return;
+    }
+
+    // Get period end from subscription
+    const periodEnd = subscription.current_period_end ||
+      subscription.items?.data?.[0]?.current_period_end ||
+      Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+
+    log.info("stripe", "invoice.payment_succeeded: updating billing", {
       action: "payment_succeeded",
-      meta: { invoiceId: invoice.id },
+      userId,
+      meta: {
+        invoiceId: invoice.id,
+        subscriptionId: subscription.id,
+        planInterval,
+        periodEnd: new Date(periodEnd * 1000).toISOString(),
+      },
     });
-    return;
-  }
 
-  // Get subscription to find user
-  const subscriptionResponse = await getStripe().subscriptions.retrieve(invoice.subscription);
-  const subscription = subscriptionResponse as unknown as StripeSubscriptionPayload;
+    await updateUserBilling(userId, {
+      plan: "plus",
+      planStatus: "active",
+      planInterval,
+      pastDueSince: null, // Clear past_due state
+      currentPeriodEnd: new Date(periodEnd * 1000),
+    });
 
-  const userId = await resolveUserId(subscription);
-  if (!userId) {
-    log.warn("stripe", "Could not resolve user for invoice", {
+    logStripeAction("subscription_update", true, {
+      userId,
+      meta: { plan: "plus", status: "active" },
+    });
+  } catch (err) {
+    const errorId = generateErrorId();
+    const message = err instanceof Error ? err.message : String(err);
+    log.error("stripe", "invoice.payment_succeeded handler threw", {
+      errorId,
       action: "payment_succeeded",
-      meta: { invoiceId: invoice.id },
+      meta: {
+        invoiceId: invoice.id,
+        subscriptionId: invoice.subscription,
+        error: message,
+      },
     });
-    return;
+    throw err;
   }
-
-  // Get period end from subscription
-  const periodEnd = subscription.current_period_end ||
-    subscription.items?.data?.[0]?.current_period_end ||
-    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
-
-  await updateUserBilling(userId, {
-    plan: "plus",
-    planStatus: "active",
-    pastDueSince: null, // Clear past_due state
-    currentPeriodEnd: new Date(periodEnd * 1000),
-  });
-
-  logStripeAction("subscription_update", true, {
-    userId,
-    meta: { plan: "plus", status: "active" },
-  });
 }
 
 // ============================================================
@@ -515,6 +619,7 @@ function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): string {
 interface BillingUpdate {
   plan?: "free" | "plus" | "ai";
   planStatus?: string;
+  planInterval?: "month" | "year" | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   currentPeriodEnd?: Date;
@@ -534,6 +639,9 @@ async function updateUserBilling(userId: string, updates: BillingUpdate): Promis
   if (updates.planStatus !== undefined) {
     updateData.plan_status = updates.planStatus;
   }
+  if (updates.planInterval !== undefined) {
+    updateData.plan_interval = updates.planInterval ?? null;
+  }
   if (updates.stripeCustomerId !== undefined) {
     updateData.stripe_customer_id = updates.stripeCustomerId;
   }
@@ -551,8 +659,14 @@ async function updateUserBilling(userId: string, updates: BillingUpdate): Promis
   if (updates.plan === "plus" || updates.plan === "ai") {
     updateData.recipe_limit = null; // Unlimited
   } else if (updates.plan === "free") {
-    updateData.recipe_limit = 25;
+    updateData.recipe_limit = 25; // Free tier limit
   }
+
+  log.info("stripe", "Applying billing update to user_preferences", {
+    action: "billing_update",
+    userId,
+    meta: { columns: Object.keys(updateData) },
+  });
 
   const { error } = await adminClient
     .from("user_preferences")
@@ -565,9 +679,64 @@ async function updateUserBilling(userId: string, updates: BillingUpdate): Promis
       errorId,
       userId,
       action: "billing_update",
-      meta: { error: error.message },
+      meta: {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        columns: Object.keys(updateData),
+      },
     });
-    throw error;
+
+    // If the error is a missing column (migration not yet applied), strip that
+    // column and retry so the critical plan/status fields still land.
+    // Handles both PostgREST format:   "Could not find the 'col' column of 'table' in the schema cache"
+    // and PostgreSQL format:           "column "col" of relation "table" does not exist"
+    const extractMissingColumn = (msg: string): string | null => {
+      const postgrestMatch = msg.match(/Could not find the '(\w+)' column/i);
+      if (postgrestMatch) return postgrestMatch[1];
+      const postgresMatch = msg.match(/column ["']?(\w+)["']? (?:of relation .+? )?does not exist/i);
+      if (postgresMatch) return postgresMatch[1];
+      return null;
+    };
+
+    const retryData = { ...updateData };
+    let currentError = error;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const missingCol = extractMissingColumn(currentError.message ?? "");
+      if (!missingCol) break;
+
+      log.warn("stripe", `Column '${missingCol}' not found — retrying without it. Apply outstanding migrations.`, {
+        action: "billing_update",
+        userId,
+      });
+
+      delete retryData[missingCol];
+      if (Object.keys(retryData).length === 0) break;
+
+      const retryResult = await adminClient
+        .from("user_preferences")
+        .update(retryData)
+        .eq("user_id", userId);
+
+      if (!retryResult.error) {
+        // Retry succeeded — still revalidate
+        revalidatePath("/settings");
+        revalidatePath("/upgrade");
+        revalidatePath("/recipes", "layout");
+        return;
+      }
+
+      currentError = retryResult.error;
+      log.error("stripe", "Retry after missing column also failed", {
+        action: "billing_update",
+        userId,
+        meta: { error: currentError.message, remainingColumns: Object.keys(retryData) },
+      });
+    }
+
+    throw currentError;
   }
 
   // Revalidate paths that depend on billing/plan status

@@ -2,15 +2,18 @@
  * User entitlements and plan gating.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export type Plan = "free" | "plus" | "ai";
 
 export type PlanStatus = "active" | "trialing" | "past_due" | "canceled" | "inactive";
 
+export type PlanInterval = "month" | "year";
+
 export interface UserEntitlements {
   userId: string;
   plan: Plan;
+  planInterval: PlanInterval | null;
   planStatus: PlanStatus | null;
   recipeLimit: number | null;
   aiActionsLimit: number | null;
@@ -52,6 +55,16 @@ export interface CanCreateRecipeResult {
   code?: "RECIPE_LIMIT_REACHED" | "NOT_AUTHENTICATED" | "ENTITLEMENTS_ERROR";
   currentCount?: number;
   limit?: number | null;
+  /** True when a former Plus subscriber is now on the free plan and over the free cap. */
+  isLapsedPlus?: boolean;
+}
+
+/**
+ * Returns true if the user previously had Plus but their subscription has ended.
+ * These users should see "Renew Plus" prompts rather than "Upgrade" prompts.
+ */
+export function isLapsedPlusUser(entitlements: UserEntitlements): boolean {
+  return entitlements.plan === "free" && entitlements.stripeCustomerId !== null;
 }
 
 /**
@@ -79,7 +92,7 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
 
   const fullResult = await supabase
     .from("user_preferences")
-    .select("plan, plan_status, recipe_limit, ai_actions_limit, ai_actions_used, stripe_customer_id, stripe_subscription_id, current_period_end, past_due_since")
+    .select("plan, plan_interval, plan_status, recipe_limit, ai_actions_limit, ai_actions_used, stripe_customer_id, stripe_subscription_id, current_period_end, past_due_since")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -135,6 +148,7 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
       data: {
         userId: user.id,
         plan: "free",
+        planInterval: null,
         planStatus: null,
         recipeLimit: 25,
         aiActionsLimit: 0,
@@ -151,13 +165,38 @@ export async function getEntitlementsForUser(): Promise<EntitlementsResult> {
 
   const billingFields = extractBillingFields(data, billingColumnsExist);
 
+  const planFromDb = (data.plan as Plan) || "free";
+  const storedRecipeLimit = data.recipe_limit ?? 25;
+
+  // Correct stale recipe_limit for free plan users.
+  // Old beta trigger set recipe_limit = 10; the canonical free limit is now 25.
+  // Return 25 immediately and silently fix the DB value in the background.
+  const correctedRecipeLimit =
+    planFromDb === "free" && storedRecipeLimit < 25 ? 25 : storedRecipeLimit;
+
+  if (planFromDb === "free" && storedRecipeLimit < 25) {
+    createAdminClient()
+      .from("user_preferences")
+      .update({ recipe_limit: 25 })
+      .eq("user_id", user.id)
+      .then(({ error }: { error: { message: string } | null }) => {
+        if (error) {
+          console.warn(
+            `[Entitlements] Failed to correct recipe_limit for user ${user.id}:`,
+            error.message
+          );
+        }
+      });
+  }
+
   return {
     success: true,
     data: {
       userId: user.id,
-      plan: (data.plan as Plan) || "free",
+      plan: planFromDb,
+      planInterval: (data.plan_interval as PlanInterval) || null,
       planStatus: billingFields.planStatus,
-      recipeLimit: data.recipe_limit ?? 25,
+      recipeLimit: correctedRecipeLimit,
       aiActionsLimit: data.ai_actions_limit ?? 0,
       aiActionsUsed: data.ai_actions_used ?? 0,
       stripeCustomerId: billingFields.stripeCustomerId,
@@ -246,9 +285,12 @@ export async function canCreateRecipe(): Promise<CanCreateRecipeResult> {
   const currentCount = await getRecipeCount();
 
   if (currentCount >= effectiveLimit) {
+    const isLapsed = isLapsedPlusUser(entitlementsResult.data);
     const reason = planStatus === "past_due"
       ? "Your payment is past due. Please update your payment method to continue creating recipes."
-      : `You've reached your ${effectivePlan} plan limit of ${effectiveLimit} recipes. Upgrade to create more.`;
+      : isLapsed
+        ? "Your Plus membership has ended. All your existing recipes are safe — renew to keep saving new ones."
+        : `You've reached your ${effectivePlan} plan limit of ${effectiveLimit} recipes. Upgrade to create more.`;
 
     return {
       allowed: false,
@@ -256,6 +298,7 @@ export async function canCreateRecipe(): Promise<CanCreateRecipeResult> {
       code: "RECIPE_LIMIT_REACHED",
       currentCount,
       limit: effectiveLimit,
+      isLapsedPlus: isLapsed,
     };
   }
 

@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, IMPORT_RATE_LIMIT } from "@/lib/rate-limit";
 import { logImportFailure, extractDomain, generateErrorId } from "@/lib/logger";
+import { trackEventAsync } from "@/lib/analytics/events";
 
 export type ImportActionResult = ImportResponse;
 
@@ -65,6 +66,11 @@ export async function importRecipeAction(url: string): Promise<ImportActionResul
       errorId,
     });
   } else {
+    // Track successful URL import (non-blocking)
+    trackEventAsync("recipe_import_started", {
+      importMethod: "url",
+      sourceUrl: trimmedUrl,
+    });
     // Revalidate recipe list so new recipe appears
     revalidatePath("/recipes");
   }
@@ -150,6 +156,8 @@ export async function importRecipeFromTextAction(payload: {
       errorId,
     });
   } else {
+    // Track successful text import (non-blocking)
+    trackEventAsync("recipe_import_started", { importMethod: "text" });
     // Revalidate recipe list so new recipe appears
     revalidatePath("/recipes");
   }

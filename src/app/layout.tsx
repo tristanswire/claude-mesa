@@ -16,6 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mesa - Recipe App",
   description: "Organize your recipes with inline ingredient measurements",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mesa",
+  },
+  other: {
+    "theme-color": "#b34519",
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +35,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#b34519" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Mesa" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-startup-image" href="/icons/apple-splash.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

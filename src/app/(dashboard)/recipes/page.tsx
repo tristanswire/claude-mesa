@@ -3,8 +3,8 @@ import { listRecipes } from "@/lib/db/recipes";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { RecipeCard } from "@/components/recipe/RecipeCard";
 import { SampleRecipeButton } from "@/components/recipe/SampleRecipeButton";
+import { RecipeSearchView } from "@/components/recipe/RecipeSearchView";
 
 export default async function RecipesPage() {
   const result = await listRecipes();
@@ -160,11 +160,7 @@ export default async function RecipesPage() {
           retry={{ label: "Try again", href: "/recipes" }}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {result.data.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
+        <RecipeSearchView initialRecipes={result.data} />
       )}
     </div>
   );

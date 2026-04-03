@@ -12,6 +12,7 @@ import { canCreateRecipe } from "@/lib/db/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { logRecipeAction, generateErrorId } from "@/lib/logger";
 import { mapErrorToFriendlyMessage } from "@/lib/errors";
+import { trackEventAsync } from "@/lib/analytics/events";
 import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
 
 export type FormState = {
@@ -19,6 +20,10 @@ export type FormState = {
   error?: string;
   errorId?: string;
   fieldErrors?: Record<string, string[]>;
+  /** Set when the user has hit a plan limit. */
+  code?: "RECIPE_LIMIT_REACHED";
+  /** True when a former Plus subscriber hit the limit after their plan expired. */
+  isLapsedPlus?: boolean;
 };
 
 function generateUUID(): string {
@@ -151,6 +156,8 @@ export async function createRecipeAction(
     return {
       success: false,
       error: limitCheck.reason || "You cannot create more recipes at this time.",
+      code: limitCheck.code === "RECIPE_LIMIT_REACHED" ? "RECIPE_LIMIT_REACHED" : undefined,
+      isLapsedPlus: limitCheck.isLapsedPlus,
     };
   }
 
@@ -266,6 +273,9 @@ export async function deleteRecipeAction(id: string): Promise<FormState> {
     recipeId: id,
     userId: user?.id,
   });
+
+  // Track recipe deletion (non-blocking)
+  trackEventAsync("recipe_deleted", { recipeId: id });
 
   revalidatePath("/recipes");
   redirect("/recipes");

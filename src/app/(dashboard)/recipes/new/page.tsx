@@ -4,6 +4,7 @@ import { createRecipeAction } from "@/lib/actions/recipes";
 import { Button } from "@/components/ui/Button";
 import { RECIPE_PAGE_MAX_WIDTH } from "@/components/recipe/RecipePageContainer";
 import { canCreateRecipe } from "@/lib/db/entitlements";
+import { ManageBillingButton } from "@/components/billing/ManageBillingButton";
 
 export default async function NewRecipePage() {
   const limitCheck = await canCreateRecipe();
@@ -55,18 +56,26 @@ export default async function NewRecipePage() {
             </svg>
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">
-            Recipe Limit Reached
+            {limitCheck.isLapsedPlus ? "Your Plus plan has ended" : "Recipe Limit Reached"}
           </h1>
           <p className="text-muted mb-6 max-w-md mx-auto">
-            {limitCheck.reason}
+            {limitCheck.isLapsedPlus
+              ? "All your existing recipes are safe. Renew Plus to keep saving new ones."
+              : limitCheck.reason}
           </p>
           {limitCheck.code === "RECIPE_LIMIT_REACHED" && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/upgrade">
-                <Button variant="primary">
-                  Upgrade Plan
-                </Button>
-              </Link>
+              {limitCheck.isLapsedPlus ? (
+                <ManageBillingButton className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors">
+                  Renew Plus
+                </ManageBillingButton>
+              ) : (
+                <Link href="/upgrade">
+                  <Button variant="primary">
+                    Upgrade Plan
+                  </Button>
+                </Link>
+              )}
               <Link href="/recipes">
                 <Button variant="outline">
                   View Recipes

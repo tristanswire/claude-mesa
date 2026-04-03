@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Ingredient, InstructionStep, IngredientRef } from "@/lib/schemas";
@@ -11,6 +11,7 @@ import { importRecipeAction, importRecipeFromTextAction } from "@/lib/actions/im
 import { createRecipeAction } from "@/lib/actions/recipes";
 import { UnitToggle } from "@/components/recipe/UnitToggle";
 import { UpgradeCallout } from "@/components/ui/UpgradeCallout";
+import { createClient } from "@/lib/supabase/client";
 
 type ImportMode = "url" | "text";
 type ImportStep = "input" | "review";
@@ -35,8 +36,28 @@ export default function ImportRecipePage() {
   const [step, setStep] = useState<ImportStep>("input");
   const [error, setError] = useState<string | null>(null);
   const [saveFieldErrors, setSaveFieldErrors] = useState<Record<string, string[]> | undefined>();
+  const [saveCode, setSaveCode] = useState<string | undefined>();
+  const [isLapsedPlus, setIsLapsedPlus] = useState(false);
   const [isImporting, startImport] = useTransition();
   const [isSaving, startSave] = useTransition();
+
+  // Plan detection
+  const [isPlusUser, setIsPlusUser] = useState(false);
+  const [useAiParse, setUseAiParse] = useState(false);
+  const [aiToast, setAiToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("user_preferences")
+      .select("plan")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.plan === "plus" || data?.plan === "ai") {
+          setIsPlusUser(true);
+        }
+      });
+  }, []);
 
   // URL mode state
   const [url, setUrl] = useState("");
@@ -77,8 +98,36 @@ export default function ImportRecipePage() {
 
   const handleImportText = () => {
     setError(null);
+    setAiToast(null);
 
     startImport(async () => {
+      if (useAiParse) {
+        // Try AI parse first
+        try {
+          const res = await fetch("/api/recipes/parse-ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: pasteText,
+              title: textTitleOverride || undefined,
+              sourceUrl: textSourceUrl || undefined,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            populateReviewForm(data.recipe, textSourceUrl);
+            return;
+          }
+
+          // AI failed — fall through to standard parser with toast
+          setAiToast("AI parsing failed. Using the standard parser instead.");
+        } catch {
+          setAiToast("AI parsing failed. Using the standard parser instead.");
+        }
+      }
+
+      // Standard parser (default or fallback)
       const result = await importRecipeFromTextAction({
         text: pasteText,
         sourceUrl: textSourceUrl || undefined,
@@ -165,6 +214,8 @@ export default function ImportRecipePage() {
       if (!result.success) {
         setError(result.error || "Failed to save recipe");
         setSaveFieldErrors(result.fieldErrors);
+        setSaveCode(result.code);
+        setIsLapsedPlus(result.isLapsedPlus ?? false);
       }
     });
   };
@@ -173,6 +224,8 @@ export default function ImportRecipePage() {
     setStep("input");
     setError(null);
     setSaveFieldErrors(undefined);
+    setSaveCode(undefined);
+    setIsLapsedPlus(false);
   };
 
   // Ingredient editing helpers
@@ -284,7 +337,7 @@ export default function ImportRecipePage() {
               setMode("url");
               setError(null);
             }}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
               mode === "url"
                 ? "bg-surface text-foreground shadow-sm"
                 : "text-muted hover:text-foreground"
@@ -298,7 +351,7 @@ export default function ImportRecipePage() {
               setMode("text");
               setError(null);
             }}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
               mode === "text"
                 ? "bg-surface text-foreground shadow-sm"
                 : "text-muted hover:text-foreground"
@@ -338,7 +391,7 @@ export default function ImportRecipePage() {
               <div className="mt-6 flex justify-end space-x-4">
                 <Link
                   href="/recipes"
-                  className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
+                  className="px-4 py-3 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
                 >
                   Cancel
                 </Link>
@@ -346,7 +399,7 @@ export default function ImportRecipePage() {
                   type="button"
                   onClick={handleImportUrl}
                   disabled={isImporting || !url.trim()}
-                  className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="px-4 py-3 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   {isImporting ? "Importing..." : "Import"}
                 </button>
@@ -390,6 +443,51 @@ Instructions:
                 Include &quot;Ingredients:&quot; and &quot;Instructions:&quot; headings for best results.
               </p>
 
+              {/* AI Parse toggle / upgrade callout */}
+              {isPlusUser ? (
+                <div className="mt-4 flex items-center justify-between rounded-lg bg-surface-2 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">AI Parse</p>
+                    <p className="text-xs text-muted">
+                      Use Claude to extract ingredients and steps more accurately
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={useAiParse}
+                    onClick={() => setUseAiParse((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      useAiParse ? "bg-primary" : "bg-border"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        useAiParse ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <UpgradeCallout
+                    title="AI Parse is a Plus feature"
+                    message="Upgrade to Plus to use Claude for more accurate ingredient and instruction extraction."
+                    variant="upgrade"
+                  />
+                </div>
+              )}
+
+              {/* AI fallback toast */}
+              {aiToast && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-warning/10 border border-warning/30 px-4 py-2 text-sm text-warning">
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                  </svg>
+                  {aiToast}
+                </div>
+              )}
+
               {/* Optional fields */}
               <div className="mt-4 pt-4 border-t border-border space-y-4">
                 <div>
@@ -430,7 +528,7 @@ Instructions:
               <div className="mt-6 flex justify-end space-x-4">
                 <Link
                   href="/recipes"
-                  className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
+                  className="px-4 py-3 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
                 >
                   Cancel
                 </Link>
@@ -438,7 +536,7 @@ Instructions:
                   type="button"
                   onClick={handleImportText}
                   disabled={isImporting || !pasteText.trim()}
-                  className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="px-4 py-3 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   {isImporting ? "Parsing..." : "Parse"}
                 </button>
@@ -470,11 +568,12 @@ Instructions:
       </div>
 
       {error && (
-        saveFieldErrors?._code?.[0] === "RECIPE_LIMIT_REACHED" ? (
+        saveCode === "RECIPE_LIMIT_REACHED" ? (
           <div className="mb-4">
             <UpgradeCallout
               message={error}
-              limit={saveFieldErrors?._limit ? parseInt(saveFieldErrors._limit[0], 10) : undefined}
+              variant={isLapsedPlus ? "renew" : "upgrade"}
+              limit={!isLapsedPlus && saveFieldErrors?._limit ? parseInt(saveFieldErrors._limit[0], 10) : undefined}
             />
           </div>
         ) : (
@@ -791,7 +890,7 @@ Instructions:
         <button
           type="button"
           onClick={resetToInput}
-          className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
+          className="px-4 py-3 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:bg-surface-2 transition-colors"
         >
           Cancel
         </button>
@@ -799,7 +898,7 @@ Instructions:
           type="button"
           onClick={handleSave}
           disabled={isSaving || !title.trim()}
-          className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          className="px-4 py-3 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           {isSaving ? "Saving..." : "Save Recipe"}
         </button>

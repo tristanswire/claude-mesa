@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { trackClientEvent } from "@/lib/actions/analytics";
 
 interface UpgradeButtonProps {
-  planId: string;
+  priceId: string;
   className?: string;
   children: React.ReactNode;
   disabled?: boolean;
 }
 
 export function UpgradeButton({
-  planId,
+  priceId,
   className,
   children,
   disabled,
@@ -24,13 +25,16 @@ export function UpgradeButton({
     setIsLoading(true);
     setError(null);
 
+    // Track upgrade button click (non-blocking)
+    trackClientEvent("upgrade_clicked", { plan: "plus" }).catch(() => {});
+
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ priceId }),
       });
 
       const data = await response.json();
