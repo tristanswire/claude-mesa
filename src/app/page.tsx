@@ -61,7 +61,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               RECIPE COMPANION
             </p>
-            <h1 className="text-5xl sm:text-7xl text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+            <h1 className="text-[2rem] sm:text-[3.5rem] text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
               Dinner shouldn&apos;t be this hard.
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
@@ -105,7 +105,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           HOW IT WORKS
         </p>
-        <h2 className="text-3xl sm:text-5xl text-foreground text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           From scattered to sorted in minutes.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -144,7 +144,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SOUND FAMILIAR?
         </p>
-        <h2 className="text-3xl sm:text-5xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           Sound Familiar?
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -176,7 +176,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           EVERYTHING IN ONE PLACE
         </p>
-        <h2 className="text-3xl sm:text-5xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           Everything in one place.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -246,7 +246,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               WHY MESA EXISTS
             </p>
-            <h2 className="text-3xl sm:text-5xl text-foreground mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+            <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
               Built out of frustration.
             </h2>
             <div className="flex flex-col gap-4 text-sm text-muted-foreground leading-relaxed" style={{ maxWidth: "500px" }}>
@@ -287,7 +287,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           WHAT FAMILIES ARE SAYING
         </p>
-        <h2 className="text-3xl sm:text-5xl text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           What families are saying.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -339,7 +339,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SIMPLE PRICING
         </p>
-        <h2 className="text-3xl sm:text-5xl text-foreground text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
           Simple pricing.
         </h2>
         <p className="text-sm text-muted-foreground text-center mb-12">
@@ -421,7 +421,7 @@ export default async function HomePage() {
         className="flex flex-col items-center text-center px-6"
         style={{ background: "#f0e0d0", paddingTop: "80px", paddingBottom: "80px" }}
       >
-        <h2 className="text-3xl sm:text-5xl text-foreground leading-tight" style={{ maxWidth: "560px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground leading-tight" style={{ maxWidth: "560px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
           Your family&apos;s recipes deserve a real home.
         </h2>
         <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
