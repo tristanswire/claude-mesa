@@ -61,7 +61,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               RECIPE APP FOR BUSY FAMILIES
             </p>
-            <h1 className="text-[2rem] sm:text-[3.5rem] text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+            <h1 className="text-[2rem] sm:text-[3.5rem] leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800, color: "hsl(30, 20%, 18%)" }}>
               Dinner shouldn&apos;t be this hard.
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
@@ -69,7 +69,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-col items-start" style={{ gap: "10px" }}>
               <Button asChild size="lg" style={{ minWidth: "200px" }}>
-                <Link href="/register">Start for Free</Link>
+                <Link href="/register" style={{ color: "#ffffff" }}>Start for Free</Link>
               </Button>
               <p className="text-xs text-muted-foreground">Free to start. No credit card. No nonsense.</p>
               <Link href="/login" className="text-sm text-muted-foreground hover:underline transition-colors">
@@ -105,7 +105,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           HOW IT WORKS
         </p>
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
           Your recipes. Finally in one place.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -144,7 +144,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SOUND FAMILIAR?
         </p>
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
           You have great recipes. You just can&apos;t find them.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -176,7 +176,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           EVERYTHING IN ONE PLACE
         </p>
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
           Built for the way families actually cook.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -255,7 +255,7 @@ export default async function HomePage() {
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
               WHY MESA EXISTS
             </p>
-            <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+            <h2 className="text-[1.75rem] sm:text-[3rem] mb-6" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
               Built out of frustration.
             </h2>
             <div className="flex flex-col gap-4 text-sm text-muted-foreground leading-relaxed" style={{ maxWidth: "500px" }}>
@@ -299,7 +299,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           WHAT FAMILIES ARE SAYING
         </p>
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
           Real families. Real kitchens.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -351,7 +351,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-center mb-3" style={{ color: "#b34519" }}>
           SIMPLE PRICING
         </p>
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, color: "hsl(30, 20%, 18%)" }}>
           Start free. Cook better tonight.
         </h2>
         <p className="text-sm text-muted-foreground text-center mb-12">
@@ -419,7 +419,7 @@ export default async function HomePage() {
             </ul>
             <div className="flex flex-col items-center gap-2 mt-auto">
               <Button asChild size="lg" className="w-full">
-                <Link href="/register">Start for Free</Link>
+                <Link href="/register" style={{ color: "#ffffff" }}>Start for Free</Link>
               </Button>
               <p className="text-xs text-muted-foreground">No credit card. Cancel anytime. Seriously.</p>
             </div>
@@ -435,7 +435,7 @@ export default async function HomePage() {
         className="flex flex-col items-center text-center px-6"
         style={{ background: "#f0e0d0", paddingTop: "80px", paddingBottom: "80px" }}
       >
-        <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground leading-tight" style={{ maxWidth: "560px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
+        <h2 className="text-[1.75rem] sm:text-[3rem] leading-tight" style={{ maxWidth: "560px", fontFamily: "var(--font-playfair)", fontWeight: 800, color: "hsl(30, 20%, 18%)" }}>
           Your family&apos;s recipes deserve a real home.
         </h2>
         <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
