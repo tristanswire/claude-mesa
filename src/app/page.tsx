@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { FileText, Clock, BookOpen, Scale, Users } from "lucide-react";
+import { FileText, Clock, BookOpen, Scale, Users, Calculator } from "lucide-react";
 
 const SECTION = "mx-auto w-full px-6";
 const MAX_W = { maxWidth: "1024px" } as const;
@@ -59,19 +59,19 @@ export default async function HomePage() {
           {/* Left: text */}
           <div className="flex flex-col items-start justify-center flex-1 min-w-0">
             <p className="text-xs font-semibold tracking-widest mb-4" style={{ color: "#b34519" }}>
-              RECIPE COMPANION
+              RECIPE APP FOR BUSY FAMILIES
             </p>
             <h1 className="text-[2rem] sm:text-[3.5rem] text-foreground leading-tight" style={{ maxWidth: "480px", fontFamily: "var(--font-playfair)", fontWeight: 800 }}>
               Dinner shouldn&apos;t be this hard.
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
-              Mesa helps busy families save recipes, plan meals, and bring everyone to the table — without the chaos.
+              One place for every recipe your family loves. No ads. No scrolling. No oily finger phone acrobatics. Just cook.
             </p>
             <div className="mt-8 flex flex-col items-start" style={{ gap: "10px" }}>
               <Button asChild size="lg" style={{ minWidth: "200px" }}>
                 <Link href="/register">Start for Free</Link>
               </Button>
-              <p className="text-xs text-muted-foreground">Free to start. No credit card required.</p>
+              <p className="text-xs text-muted-foreground">Free to start. No credit card. No nonsense.</p>
               <Link href="/login" className="text-sm text-muted-foreground hover:underline transition-colors">
                 Already have an account? Sign in
               </Link>
@@ -106,24 +106,24 @@ export default async function HomePage() {
           HOW IT WORKS
         </p>
         <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-12" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-          From scattered to sorted in minutes.
+          Your recipes. Finally in one place.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {[
             {
               num: "01",
-              headline: "Save your recipes",
-              desc: "Import from any URL, paste from anywhere, or create from scratch. Mesa strips the ads and clutter and keeps just what you need.",
+              headline: "Save it once, find it forever.",
+              desc: "Paste a link from any cooking site. Mesa strips the ads, the life story, and the clutter. Just the recipe — clean, readable, yours.",
             },
             {
               num: "02",
-              headline: "Plan your meals",
-              desc: "Organize recipes into collections for the week. Know what you're cooking before 5pm hits and the chaos starts.",
+              headline: "Plan without the panic.",
+              desc: "Organize recipes into collections for the week. Know what's for dinner before anyone asks. That's a win.",
             },
             {
               num: "03",
-              headline: "Cook with ease",
-              desc: "Cooking mode keeps everything on one screen. No more scrolling with oily fingers. Just cook.",
+              headline: "Cook without touching your phone.",
+              desc: "Cooking mode puts ingredients and instructions on one screen. Every ingredient referenced exactly where you need it in the steps. No more flipping back and forth with oily hands.",
             },
           ].map((step) => (
             <div key={step.num} className="flex flex-col gap-3">
@@ -145,7 +145,7 @@ export default async function HomePage() {
           SOUND FAMILIAR?
         </p>
         <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-          Sound Familiar?
+          You have great recipes. You just can&apos;t find them.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="flex flex-col items-center text-center gap-4" style={{ ...CARD, padding: "32px" }}>
@@ -154,7 +154,7 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold text-lg text-foreground">Your recipes are everywhere.</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Saved in browser tabs. Screenshotted on your phone. Written on paper you can&apos;t find. You have great recipes — you just can&apos;t find them when you need them.
+              Bookmarked in Safari. Screenshot on your camera roll. Handwritten on a Post-it that may or may not still exist. You have great recipes — they&apos;re just scattered across your entire life.
             </p>
           </div>
           <div className="flex flex-col items-center text-center gap-4" style={{ ...CARD, padding: "32px" }}>
@@ -163,7 +163,7 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold text-lg text-foreground">What&apos;s for dinner?</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Every. Single. Night. The mental load of figuring out meals for a busy family is exhausting. There has to be a better way.
+              Every. Single. Night. You&apos;re staring into the fridge at 5:15pm, completely blank. You know there&apos;s something in there. You&apos;re just not sure what it becomes.
             </p>
           </div>
         </div>
@@ -177,34 +177,43 @@ export default async function HomePage() {
           EVERYTHING IN ONE PLACE
         </p>
         <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-          Everything in one place.
+          Built for the way families actually cook.
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="flex flex-col items-center gap-3 text-center" style={{ ...CARD, padding: "28px" }}>
             <div style={ICON_WRAP}>
               <BookOpen size={20} style={{ color: "#b34519" }} />
             </div>
-            <h3 className="font-semibold text-foreground">Save any recipe</h3>
+            <h3 className="font-semibold text-foreground">No ads. No life story. Just the recipe.</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Import from any URL, paste from anywhere, or create from scratch. Your recipes, beautifully organized and always findable.
+              Paste a link from any cooking site and Mesa strips everything you don&apos;t need — the ads, the 800-word intro, the pop-ups. You get a clean, readable recipe. Every time.
             </p>
           </div>
           <div className="flex flex-col items-center gap-3 text-center" style={{ ...CARD, padding: "28px" }}>
             <div style={ICON_WRAP}>
               <Scale size={20} style={{ color: "#b34519" }} />
             </div>
-            <h3 className="font-semibold text-foreground">Cook with confidence</h3>
+            <h3 className="font-semibold text-foreground">Every ingredient, exactly where you need it.</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Ingredients scale automatically. No more mental math mid-cook. Just tap and cook.
+              Mesa links ingredients inline inside each instruction step. No more flipping back and forth between the ingredient list and the method. Everything is right there when you need it.
             </p>
           </div>
           <div className="flex flex-col items-center gap-3 text-center" style={{ ...CARD, padding: "28px" }}>
             <div style={ICON_WRAP}>
               <Users size={20} style={{ color: "#b34519" }} />
             </div>
-            <h3 className="font-semibold text-foreground">Gather together</h3>
+            <h3 className="font-semibold text-foreground">Cook without touching your phone.</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Plan meals for the week. Feed your family without the stress. Dinner time becomes something everyone looks forward to.
+              Cooking mode puts your entire recipe on one screen — ingredients and steps together. Tap through each step with a single tap. Your phone stays clean. So do your hands.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-3 text-center" style={{ ...CARD, padding: "28px" }}>
+            <div style={ICON_WRAP}>
+              <Calculator size={20} style={{ color: "#b34519" }} />
+            </div>
+            <h3 className="font-semibold text-foreground">Your measurements, your way.</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Switch between cups, grams, and ounces with a single tap. Scale any recipe to any serving size automatically. No mental math. No conversion charts. Just cook.
             </p>
           </div>
         </div>
@@ -251,10 +260,13 @@ export default async function HomePage() {
             </h2>
             <div className="flex flex-col gap-4 text-sm text-muted-foreground leading-relaxed" style={{ maxWidth: "500px" }}>
               <p>
-                I built Mesa to solve my own problem with current cooking sites and apps. Sites are littered with ads that ruin the cooking experience every time. Ingredients and instructions are split, causing friction when all I want to do is cook. And there&apos;s no cooking mode — so I&apos;m stuck scrolling all over the place with oily fingers.
+                Cooking sites are a mess. Ads everywhere. The recipe buried under a 900-word story about someone&apos;s trip to Tuscany. Ingredients on one screen, instructions on another — and me, standing over the stove, scrolling with oily fingers trying to find step three.
               </p>
               <p>
-                I wanted something minimal and easy to use for busy lives like mine. So I built it.
+                I wanted one place. Clean. Fast. Built for how busy families actually cook — not how food bloggers want you to experience their content.
+              </p>
+              <p>
+                So I built it.
               </p>
             </div>
             <div className="mt-6 flex flex-col gap-1">
@@ -288,24 +300,24 @@ export default async function HomePage() {
           WHAT FAMILIES ARE SAYING
         </p>
         <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-10" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-          What families are saying.
+          Real families. Real kitchens.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
             {
-              quote: "I used to have recipes saved in 6 different places. Now everything is in Mesa and I can actually find what I'm looking for when I need it.",
+              quote: "I used to have recipes saved in six different places — tabs, screenshots, a notes app, and a random Google Doc. Mesa fixed that in about ten minutes.",
               name: "Sarah M.",
               desc: "Mom of 3, Texas",
               initials: "SM",
             },
             {
-              quote: "The URL import is magic. I just paste a link and the whole recipe is saved, formatted, and ready to cook. My wife thinks I'm organized now.",
+              quote: "The URL import alone is worth it. Paste a link, done. Clean recipe, no ads, no scrolling. My wife thinks I've become a different person.",
               name: "James T.",
               desc: "Dad of 2, Colorado",
               initials: "JT",
             },
             {
-              quote: "We use Mesa every single week for meal planning. It has made dinner time so much less stressful for our whole family.",
+              quote: "We plan our whole week in Mesa on Sunday night. It takes maybe 20 minutes and I actually know what's for dinner every night. That used to feel impossible.",
               name: "Maria L.",
               desc: "Busy parent, Florida",
               initials: "ML",
@@ -340,10 +352,10 @@ export default async function HomePage() {
           SIMPLE PRICING
         </p>
         <h2 className="text-[1.75rem] sm:text-[3rem] text-foreground text-center mb-3" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700 }}>
-          Simple pricing.
+          Start free. Cook better tonight.
         </h2>
         <p className="text-sm text-muted-foreground text-center mb-12">
-          Start free. Upgrade when you&apos;re ready.
+          No tricks. No trial periods. Free means free.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-auto" style={{ maxWidth: "700px" }}>
 
@@ -355,7 +367,7 @@ export default async function HomePage() {
               <p className="text-xs text-muted-foreground mt-1">Forever free</p>
             </div>
             <ul className="flex flex-col gap-2 text-sm text-foreground flex-1">
-              {["Up to 25 recipes", "URL and text import", "Recipe collections", "Recipe sharing"].map((f) => (
+              {["Up to 25 recipes", "Clean URL and text import", "Cooking mode", "Recipe collections", "Shareable recipe links"].map((f) => (
                 <li key={f} className="flex items-center gap-2">
                   <span style={{ color: "#b34519" }}>✓</span> {f}
                 </li>
@@ -394,7 +406,9 @@ export default async function HomePage() {
                 "Unlimited recipes",
                 "All import types",
                 "AI-powered ingredient parsing",
+                "Inline ingredient linking",
                 "Unlimited collections",
+                "Unit conversion & serving scaling",
                 "Priority support",
                 "Early access to new features",
               ].map((f) => (
@@ -407,7 +421,7 @@ export default async function HomePage() {
               <Button asChild size="lg" className="w-full">
                 <Link href="/register">Start for Free</Link>
               </Button>
-              <p className="text-xs text-muted-foreground">No credit card required</p>
+              <p className="text-xs text-muted-foreground">No credit card. Cancel anytime. Seriously.</p>
             </div>
           </div>
 
@@ -425,12 +439,13 @@ export default async function HomePage() {
           Your family&apos;s recipes deserve a real home.
         </h2>
         <p className="mt-4 text-base text-muted-foreground leading-relaxed" style={{ maxWidth: "420px" }}>
-          Join families already using Mesa to bring dinner back to the table.
+          Stop losing recipes. Stop staring at the fridge. Start cooking.
         </p>
         <div className="flex flex-col items-center mt-8" style={{ gap: "12px", width: "100%", maxWidth: "280px" }}>
           <Button asChild size="lg" className="w-full">
             <Link href="/register">Start for Free</Link>
           </Button>
+          <p className="text-xs text-muted-foreground">Free to start. No credit card. Cancel anytime.</p>
           <Link href="/login" className="text-sm text-muted-foreground hover:underline transition-colors">
             Already have an account? Sign in
           </Link>
