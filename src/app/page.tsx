@@ -436,13 +436,15 @@ export default async function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          6 — Core differentiator (inline ingredients)
+          6 — Why Mesa / Built for Real Life (combined)
       ───────────────────────────────────────────────────────────── */}
+      <span id="features" aria-hidden="true" />
+      <span id="for-families" aria-hidden="true" />
       <section id="why-mesa" className={SECTION} style={{ ...MAX_W, ...SECTION_Y }}>
-        <div className="flex flex-col sm:flex-row items-center gap-12 sm:gap-16">
+        <div className="flex flex-col sm:flex-row items-start gap-12 sm:gap-16" style={{ alignItems: "center" }}>
 
-          {/* Left: text */}
-          <div className="flex flex-col flex-1 min-w-0">
+          {/* Left: text (60%) */}
+          <div className="flex flex-col flex-[3] min-w-0">
             <p className={`${EYEBROW} mb-4`} style={{ color: PRIMARY }}>
               WHY MESA FEELS DIFFERENT
             </p>
@@ -452,10 +454,14 @@ export default async function HomePage() {
             >
               Every ingredient, exactly where you need it.
             </h2>
-            <p className="text-base text-muted-foreground leading-relaxed mb-6" style={{ maxWidth: "460px" }}>
+
+            {/* Body paragraph */}
+            <p className="text-base text-muted-foreground leading-relaxed mb-6" style={{ maxWidth: "480px" }}>
               Most recipe sites make you scroll up for ingredients, then back down for instructions, over and over again. Mesa places ingredient amounts directly inside the steps — in your preferred units — so cooking feels smoother, faster, and far less distracting.
             </p>
-            <ul className="flex flex-col gap-3">
+
+            {/* Four checkmark bullets */}
+            <ul className="flex flex-col gap-3 mb-8">
               {[
                 "Ingredients inline in the instructions",
                 "Metric or imperial, your choice",
@@ -468,18 +474,39 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
+
+            {/* Divider */}
+            <div className="mb-8" style={{ height: "1px", background: "rgba(179,69,25,0.12)" }} />
+
+            {/* Closing paragraph — softer */}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5" style={{ maxWidth: "480px" }}>
+              Mesa is built for anyone who wants less friction in the kitchen — especially families. When dinner already feels chaotic, you should be able to open a recipe and start cooking without ads, clutter, or constant back-and-forth.
+            </p>
+
+            {/* Three smaller bullets */}
+            <ul className="flex flex-col gap-2">
+              {[
+                "No ads or clutter",
+                "Ingredients inline, no scrolling back and forth",
+                "One place for all your recipes",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-0.5 flex-shrink-0" style={{ color: PRIMARY }}>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Right: inline ingredient visual */}
+          {/* Right: placeholder visual (40%) */}
           {/* TODO: Replace with screenshot showing inline ingredient experience in Mesa */}
           <div
-            className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center"
+            className="w-full sm:w-auto flex-shrink-0 flex-[2] flex items-center justify-center"
             style={{
               background: "#f0e0d0",
               borderRadius: "16px",
               boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
-              width: "clamp(260px, 38%, 400px)",
-              height: "clamp(240px, 32vw, 380px)",
+              minHeight: "clamp(240px, 32vw, 420px)",
             }}
           >
             <span className="text-xs font-medium text-center px-6" style={{ color: PRIMARY, opacity: 0.6 }}>
@@ -488,41 +515,6 @@ export default async function HomePage() {
           </div>
 
         </div>
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-          7 — Built for real life (families)
-      ───────────────────────────────────────────────────────────── */}
-      <span id="features" aria-hidden="true" />
-      <section
-        id="for-families"
-        className={`${SECTION} flex flex-col items-center text-center`}
-        style={{ ...MAX_W, ...SECTION_Y }}
-      >
-        <p className={`${EYEBROW} mb-3`} style={{ color: PRIMARY }}>
-          BUILT FOR REAL LIFE
-        </p>
-        <h2
-          className={`${H2} mb-5`}
-          style={{ maxWidth: "620px", fontFamily: "var(--font-playfair)", fontWeight: 700, color: HEADING_COLOR }}
-        >
-          For busy nights, hungry kids, and less mental load.
-        </h2>
-        <p className="text-base text-muted-foreground leading-relaxed mb-8" style={{ maxWidth: "560px" }}>
-          Mesa is built for anyone who wants less friction in the kitchen — especially families. When dinner already feels chaotic, you should be able to open a recipe and start cooking without ads, clutter, or constant back-and-forth.
-        </p>
-        <ul className="flex flex-col items-center gap-3">
-          {[
-            "No ads or clutter",
-            "Ingredients inline, no scrolling back and forth",
-            "One place for all your recipes",
-          ].map((item) => (
-            <li key={item} className="flex items-center gap-2 text-base text-foreground">
-              <span style={{ color: PRIMARY }}>✓</span>
-              {item}
-            </li>
-          ))}
-        </ul>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
