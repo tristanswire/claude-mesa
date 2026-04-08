@@ -493,6 +493,7 @@ export default async function HomePage() {
       {/* ─────────────────────────────────────────────────────────────
           7 — Built for real life (families)
       ───────────────────────────────────────────────────────────── */}
+      <span id="features" aria-hidden="true" />
       <section
         id="for-families"
         className={`${SECTION} flex flex-col items-center text-center`}
@@ -507,42 +508,21 @@ export default async function HomePage() {
         >
           For busy nights, hungry kids, and less mental load.
         </h2>
-        <p className="text-base text-muted-foreground leading-relaxed pb-10" style={{ maxWidth: "580px" }}>
-          Mesa is for anyone who wants less friction in the kitchen — but families feel it most. One calm place for your recipes, so when everyone&apos;s hungry, you can just open dinner and start cooking.
+        <p className="text-base text-muted-foreground leading-relaxed mb-8" style={{ maxWidth: "560px" }}>
+          Mesa is built for anyone who wants less friction in the kitchen — especially families. When dinner already feels chaotic, you should be able to open a recipe and start cooking without ads, clutter, or constant back-and-forth.
         </p>
-        <div id="features" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <ul className="flex flex-col items-center gap-3">
           {[
-            {
-              headline: "No ads. No life story. Just the recipe.",
-              body: "Mesa removes the clutter so you can focus on cooking.",
-            },
-            {
-              headline: "Save recipes from almost anywhere.",
-              body: "Import from a URL, pasted text, screenshot, or manual entry.",
-            },
-            {
-              headline: "Cook without the back-and-forth.",
-              body: "Ingredients appear right inside the steps.",
-            },
-            {
-              headline: "Your units, your way.",
-              body: "Use metric or imperial based on how you cook.",
-            },
-            {
-              headline: "Keep your recipes in one place.",
-              body: "No more digging through screenshots, saved posts, or notes.",
-            },
-            {
-              headline: "Designed for ease, not distraction.",
-              body: "A cozy, focused cooking experience built for real homes.",
-            },
-          ].map((card) => (
-            <div key={card.headline} className="flex flex-col gap-2" style={{ ...CARD, padding: "24px 28px" }}>
-              <h3 className="font-semibold text-foreground text-sm leading-snug">{card.headline}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{card.body}</p>
-            </div>
+            "No ads or clutter",
+            "Ingredients inline, no scrolling back and forth",
+            "One place for all your recipes",
+          ].map((item) => (
+            <li key={item} className="flex items-center gap-2 text-base text-foreground">
+              <span style={{ color: PRIMARY }}>✓</span>
+              {item}
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
