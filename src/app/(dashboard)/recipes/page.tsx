@@ -106,7 +106,7 @@ export default async function RecipesPage() {
                   3
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Organize into stacks</p>
+                  <p className="font-medium text-foreground">Organize into collections</p>
                   <p className="text-sm text-muted">Group by meal, occasion, or mood</p>
                 </div>
               </div>

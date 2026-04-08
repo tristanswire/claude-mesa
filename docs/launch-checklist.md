@@ -122,7 +122,7 @@ See **[`/docs/smoke-test.md`](./smoke-test.md)** for full checklist.
 1. [ ] Sign up / login works
 2. [ ] Create recipe → appears in list
 3. [ ] Import recipe from URL → parses correctly
-4. [ ] Add recipe to stack → appears in stack
+4. [ ] Add recipe to collection → appears in collection
 5. [ ] Share recipe → link works in incognito
 6. [ ] Settings → theme/units persist
 7. [ ] Feedback form submits
@@ -234,7 +234,7 @@ Sign up here: [URL]
 
 Try this flow:
 1. Import a recipe from a cooking site (paste URL)
-2. Add it to a Stack (collection)
+2. Add it to a Collection
 3. Try Cook Mode on a recipe
 4. Share a recipe with me
 
@@ -250,7 +250,7 @@ Thanks!
 |------|--------|------------------|
 | 1 | Sign up | Account created, lands on /recipes |
 | 2 | Import recipe | URL import works, recipe saved |
-| 3 | Add to stack | Stack created, recipe added |
+| 3 | Add to collection | Collection created, recipe added |
 | 4 | View recipe | Detail page loads, ingredients/steps visible |
 | 5 | Share recipe | Share link created, opens in browser |
 | 6 | Submit feedback | Feedback row in database |
@@ -262,7 +262,7 @@ Track in Supabase `events` table or Vercel Analytics:
 | Metric | Query | Target |
 |--------|-------|--------|
 | **Activation** | Users with >= 1 saved recipe | 80% of signups |
-| **Engagement** | Users who added recipe to stack | 50% of activated |
+| **Engagement** | Users who added recipe to collection | 50% of activated |
 | **Retention** | Users who return within 7 days | 30% |
 | **Feedback** | Feedback submissions | 5+ per 10 users |
 
@@ -309,7 +309,7 @@ List any known issues for soft launch users:
 Before public launch, confirm:
 
 - [ ] No critical bugs reported in soft launch
-- [ ] Core flow (import → stack → share) works reliably
+- [ ] Core flow (import → collection → share) works reliably
 - [ ] Activation rate >= 70%
 - [ ] No security issues discovered
 - [ ] Billing flow tested end-to-end (if enabled)

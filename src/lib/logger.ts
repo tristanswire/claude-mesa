@@ -252,13 +252,13 @@ export function logImageAction(
 }
 
 /**
- * Log stack operations (add, remove, create, delete).
+ * Log collection operations (add, remove, create, delete).
  */
-export function logStackAction(
+export function logCollectionAction(
   action: "add_recipe" | "remove_recipe" | "create" | "update" | "delete",
   success: boolean,
   params: {
-    stackId?: string;
+    collectionId?: string;
     recipeId?: string;
     userId?: string;
     errorId?: string;
@@ -266,14 +266,14 @@ export function logStackAction(
   }
 ) {
   const level = success ? "info" : "error";
-  const message = success ? `Stack ${action} succeeded` : `Stack ${action} failed`;
+  const message = success ? `Collection ${action} succeeded` : `Collection ${action} failed`;
 
-  log[level]("stack", message, {
-    action: `stack_${action}`,
+  log[level]("collection", message, {
+    action: `collection_${action}`,
     errorId: params.errorId,
     userId: anonymizeId(params.userId),
     meta: {
-      stackId: params.stackId,
+      collectionId: params.collectionId,
       recipeId: params.recipeId,
       error: params.error,
     },

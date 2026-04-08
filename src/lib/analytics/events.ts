@@ -29,9 +29,9 @@ export interface EventMetadata {
   sourceUrl?: string;
   importMethod?: "url" | "text" | "manual";
 
-  // Stack events
-  stackId?: string;
-  stackName?: string;
+  // Collection events
+  collectionId?: string;
+  collectionName?: string;
 
   // Onboarding events
   unitSystem?: string;

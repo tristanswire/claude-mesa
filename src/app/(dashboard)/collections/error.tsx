@@ -21,7 +21,7 @@ function generateErrorId(digest?: string): string {
   return `ERR-${id}`;
 }
 
-export default function StacksError({ error, reset }: ErrorProps) {
+export default function CollectionsError({ error, reset }: ErrorProps) {
   const [copied, setCopied] = useState(false);
   const errorId = useMemo(() => generateErrorId(error.digest), [error.digest]);
 
@@ -31,7 +31,7 @@ export default function StacksError({ error, reset }: ErrorProps) {
         timestamp: new Date().toISOString(),
         level: "error",
         tag: "ui",
-        message: "Stacks error boundary triggered",
+        message: "Collections error boundary triggered",
         errorId,
         meta: {
           errorMessage: error.message,
@@ -80,10 +80,10 @@ export default function StacksError({ error, reset }: ErrorProps) {
       </div>
 
       <h1 className="text-2xl font-bold text-foreground mb-2">
-        Problem loading stacks
+        Problem loading collections
       </h1>
       <p className="text-muted text-center max-w-md mb-4">
-        We couldn&apos;t load your stacks. This might be a temporary issue—try refreshing the page.
+        We couldn&apos;t load your collections. This might be a temporary issue—try refreshing the page.
       </p>
 
       <button
@@ -115,7 +115,7 @@ export default function StacksError({ error, reset }: ErrorProps) {
       <div className="flex items-center gap-4">
         <Button onClick={reset}>Try again</Button>
         <Button variant="outline" asChild>
-          <Link href="/stacks">View all stacks</Link>
+          <Link href="/collections">View all collections</Link>
         </Button>
       </div>
 

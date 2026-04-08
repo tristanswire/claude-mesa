@@ -3,12 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Recipe } from "@/lib/schemas";
-import type { Stack } from "@/lib/db/stacks";
+import type { Collection } from "@/lib/db/collections";
 import type { UnitSystem } from "@/lib/units";
 import { formatIngredient } from "@/lib/units";
 import { renderInstructions } from "@/lib/render";
 import { UnitToggle } from "./UnitToggle";
-import { StacksModal } from "./StacksModal";
+import { CollectionsModal } from "./CollectionsModal";
 import { RecipeHeaderActions } from "./RecipeHeaderActions";
 import { RecipeHeroImage } from "./RecipeImage";
 import { StepCard } from "./StepCard";
@@ -18,8 +18,8 @@ import { RECIPE_PAGE_MAX_WIDTH } from "./RecipePageContainer";
 interface RecipeDetailViewProps {
   recipe: Recipe;
   initialUnitSystem: UnitSystem;
-  allStacks?: Stack[];
-  currentStacks?: Stack[];
+  allCollections?: Collection[];
+  currentCollections?: Collection[];
   initialShareToken?: string;
   initialShareId?: string;
 }
@@ -27,13 +27,13 @@ interface RecipeDetailViewProps {
 export function RecipeDetailView({
   recipe,
   initialUnitSystem,
-  allStacks = [],
-  currentStacks = [],
+  allCollections = [],
+  currentCollections = [],
   initialShareToken,
   initialShareId,
 }: RecipeDetailViewProps) {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(initialUnitSystem);
-  const [isStacksModalOpen, setIsStacksModalOpen] = useState(false);
+  const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
 
   // Render instructions with inline callouts
   const renderedInstructions = renderInstructions(
@@ -103,8 +103,8 @@ export function RecipeDetailView({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsStacksModalOpen(true)}
-            aria-label="Manage stacks"
+            onClick={() => setIsCollectionsModalOpen(true)}
+            aria-label="Manage collections"
           >
             <svg
               className="w-4 h-4 sm:mr-2"
@@ -119,10 +119,10 @@ export function RecipeDetailView({
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <span className="hidden sm:inline">Stacks</span>
-            {currentStacks.length > 0 && (
+            <span className="hidden sm:inline">Collections</span>
+            {currentCollections.length > 0 && (
               <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-                {currentStacks.length}
+                {currentCollections.length}
               </span>
             )}
           </Button>
@@ -274,22 +274,22 @@ export function RecipeDetailView({
                 d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
               />
             </svg>
-            {currentStacks.length > 0 ? (
+            {currentCollections.length > 0 ? (
               <span>
-                In {currentStacks.length} stack{currentStacks.length !== 1 ? "s" : ""}:{" "}
+                In {currentCollections.length} collection{currentCollections.length !== 1 ? "s" : ""}:{" "}
                 <span className="text-foreground font-medium">
-                  {currentStacks.map((s) => s.name).join(", ")}
+                  {currentCollections.map((c) => c.name).join(", ")}
                 </span>
               </span>
             ) : (
-              <span>Organize this recipe by adding it to a stack</span>
+              <span>Organize this recipe by adding it to a collection</span>
             )}
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant={currentStacks.length > 0 ? "outline" : "primary"}
+              variant={currentCollections.length > 0 ? "outline" : "primary"}
               size="sm"
-              onClick={() => setIsStacksModalOpen(true)}
+              onClick={() => setIsCollectionsModalOpen(true)}
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -304,7 +304,7 @@ export function RecipeDetailView({
                   d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                 />
               </svg>
-              {currentStacks.length > 0 ? "Manage Stacks" : "Add to Stack"}
+              {currentCollections.length > 0 ? "Manage Collections" : "Add to Collection"}
             </Button>
           </div>
         </div>
@@ -407,13 +407,13 @@ export function RecipeDetailView({
         </div>
       </div>
 
-      {/* Stacks Modal */}
-      <StacksModal
+      {/* Collections Modal */}
+      <CollectionsModal
         recipeId={recipe.id}
-        currentStacks={currentStacks}
-        allStacks={allStacks}
-        isOpen={isStacksModalOpen}
-        onClose={() => setIsStacksModalOpen(false)}
+        currentCollections={currentCollections}
+        allCollections={allCollections}
+        isOpen={isCollectionsModalOpen}
+        onClose={() => setIsCollectionsModalOpen(false)}
       />
     </div>
   );

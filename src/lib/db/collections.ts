@@ -3,7 +3,7 @@ import type { Recipe } from "@/lib/schemas";
 import { parseRecipeFromDb } from "@/lib/validation/recipes";
 import { trackEventAsync } from "@/lib/analytics/events";
 
-export interface Stack {
+export interface Collection {
   id: string;
   userId: string;
   name: string;
@@ -12,7 +12,7 @@ export interface Stack {
   updatedAt: Date;
 }
 
-export interface StackWithCount extends Stack {
+export interface CollectionWithCount extends Collection {
   recipeCount: number;
 }
 
@@ -21,9 +21,9 @@ export type DbResult<T> =
   | { success: false; error: string };
 
 /**
- * Transform snake_case DB row to camelCase Stack.
+ * Transform snake_case DB row to camelCase Collection.
  */
-function transformStackRow(row: Record<string, unknown>): Stack {
+function transformCollectionRow(row: Record<string, unknown>): Collection {
   return {
     id: row.id as string,
     userId: row.user_id as string,
@@ -35,12 +35,12 @@ function transformStackRow(row: Record<string, unknown>): Stack {
 }
 
 /**
- * List all stacks for the current user with recipe counts.
+ * List all collections for the current user with recipe counts.
  */
-export async function listStacks(): Promise<DbResult<StackWithCount[]>> {
+export async function listCollections(): Promise<DbResult<CollectionWithCount[]>> {
   const supabase = await createClient();
 
-  // Get stacks with recipe counts via a join
+  // Get collections with recipe counts via a join
   const { data, error } = await supabase
     .from("stacks")
     .select(`
@@ -50,22 +50,22 @@ export async function listStacks(): Promise<DbResult<StackWithCount[]>> {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("Error listing stacks:", error);
+    console.error("Error listing collections:", error);
     return { success: false, error: error.message };
   }
 
-  const stacks: StackWithCount[] = (data || []).map((row) => ({
-    ...transformStackRow(row),
+  const collections: CollectionWithCount[] = (data || []).map((row) => ({
+    ...transformCollectionRow(row),
     recipeCount: (row.recipe_stacks as { count: number }[])?.[0]?.count || 0,
   }));
 
-  return { success: true, data: stacks };
+  return { success: true, data: collections };
 }
 
 /**
- * Get a single stack by ID.
+ * Get a single collection by ID.
  */
-export async function getStackById(id: string): Promise<DbResult<Stack>> {
+export async function getCollectionById(id: string): Promise<DbResult<Collection>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -76,22 +76,22 @@ export async function getStackById(id: string): Promise<DbResult<Stack>> {
 
   if (error) {
     if (error.code === "PGRST116") {
-      return { success: false, error: "Stack not found" };
+      return { success: false, error: "Collection not found" };
     }
-    console.error("Error getting stack:", error);
+    console.error("Error getting collection:", error);
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: transformStackRow(data) };
+  return { success: true, data: transformCollectionRow(data) };
 }
 
 /**
- * Create a new stack.
+ * Create a new collection.
  */
-export async function createStack(payload: {
+export async function createCollection(payload: {
   name: string;
   description?: string;
-}): Promise<DbResult<Stack>> {
+}): Promise<DbResult<Collection>> {
   const supabase = await createClient();
 
   const {
@@ -115,30 +115,30 @@ export async function createStack(payload: {
   if (error) {
     // Handle unique constraint violation
     if (error.code === "23505") {
-      return { success: false, error: "A stack with this name already exists" };
+      return { success: false, error: "A collection with this name already exists" };
     }
-    console.error("Error creating stack:", error);
+    console.error("Error creating collection:", error);
     return { success: false, error: error.message };
   }
 
-  const stack = transformStackRow(data);
+  const collection = transformCollectionRow(data);
 
   // Track event (non-blocking)
   trackEventAsync("stack_created", {
-    stackId: stack.id,
-    stackName: stack.name,
+    collectionId: collection.id,
+    collectionName: collection.name,
   });
 
-  return { success: true, data: stack };
+  return { success: true, data: collection };
 }
 
 /**
- * Update an existing stack.
+ * Update an existing collection.
  */
-export async function updateStack(
+export async function updateCollection(
   id: string,
   payload: { name?: string; description?: string }
-): Promise<DbResult<Stack>> {
+): Promise<DbResult<Collection>> {
   const supabase = await createClient();
 
   const updateData: Record<string, unknown> = {};
@@ -158,28 +158,28 @@ export async function updateStack(
 
   if (error) {
     if (error.code === "PGRST116") {
-      return { success: false, error: "Stack not found" };
+      return { success: false, error: "Collection not found" };
     }
     if (error.code === "23505") {
-      return { success: false, error: "A stack with this name already exists" };
+      return { success: false, error: "A collection with this name already exists" };
     }
-    console.error("Error updating stack:", error);
+    console.error("Error updating collection:", error);
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: transformStackRow(data) };
+  return { success: true, data: transformCollectionRow(data) };
 }
 
 /**
- * Delete a stack. Associated recipe_stacks are deleted via CASCADE.
+ * Delete a collection. Associated recipe_stacks are deleted via CASCADE.
  */
-export async function deleteStack(id: string): Promise<DbResult<void>> {
+export async function deleteCollection(id: string): Promise<DbResult<void>> {
   const supabase = await createClient();
 
   const { error } = await supabase.from("stacks").delete().eq("id", id);
 
   if (error) {
-    console.error("Error deleting stack:", error);
+    console.error("Error deleting collection:", error);
     return { success: false, error: error.message };
   }
 
@@ -187,18 +187,18 @@ export async function deleteStack(id: string): Promise<DbResult<void>> {
 }
 
 /**
- * List recipes in a stack.
+ * List recipes in a collection.
  */
-export async function listRecipesForStack(
-  stackId: string
+export async function listRecipesForCollection(
+  collectionId: string
 ): Promise<DbResult<Recipe[]>> {
   const supabase = await createClient();
 
-  // Get recipe IDs in this stack
+  // Get recipe IDs in this collection
   const { data: recipeStacks, error: rsError } = await supabase
     .from("recipe_stacks")
     .select("recipe_id")
-    .eq("stack_id", stackId)
+    .eq("stack_id", collectionId)
     .order("added_at", { ascending: false });
 
   if (rsError) {
@@ -219,7 +219,7 @@ export async function listRecipesForStack(
     .in("id", recipeIds);
 
   if (recipeError) {
-    console.error("Error listing recipes for stack:", recipeError);
+    console.error("Error listing recipes for collection:", recipeError);
     return { success: false, error: recipeError.message };
   }
 
@@ -241,43 +241,43 @@ export async function listRecipesForStack(
 }
 
 /**
- * Add a recipe to a stack.
+ * Add a recipe to a collection.
  */
-export async function addRecipeToStack(
+export async function addRecipeToCollection(
   recipeId: string,
-  stackId: string
+  collectionId: string
 ): Promise<DbResult<void>> {
   const supabase = await createClient();
 
   const { error } = await supabase.from("recipe_stacks").insert({
     recipe_id: recipeId,
-    stack_id: stackId,
+    stack_id: collectionId,
   });
 
   if (error) {
     // Handle duplicate
     if (error.code === "23505") {
-      return { success: false, error: "Recipe is already in this stack" };
+      return { success: false, error: "Recipe is already in this collection" };
     }
-    console.error("Error adding recipe to stack:", error);
+    console.error("Error adding recipe to collection:", error);
     return { success: false, error: error.message };
   }
 
   // Track event (non-blocking)
   trackEventAsync("added_to_stack", {
     recipeId,
-    stackId,
+    collectionId,
   });
 
   return { success: true, data: undefined };
 }
 
 /**
- * Remove a recipe from a stack.
+ * Remove a recipe from a collection.
  */
-export async function removeRecipeFromStack(
+export async function removeRecipeFromCollection(
   recipeId: string,
-  stackId: string
+  collectionId: string
 ): Promise<DbResult<void>> {
   const supabase = await createClient();
 
@@ -285,48 +285,48 @@ export async function removeRecipeFromStack(
     .from("recipe_stacks")
     .delete()
     .eq("recipe_id", recipeId)
-    .eq("stack_id", stackId);
+    .eq("stack_id", collectionId);
 
   if (error) {
-    console.error("Error removing recipe from stack:", error);
+    console.error("Error removing recipe from collection:", error);
     return { success: false, error: error.message };
   }
 
   // Track event (non-blocking)
   trackEventAsync("removed_from_stack", {
     recipeId,
-    stackId,
+    collectionId,
   });
 
   return { success: true, data: undefined };
 }
 
 /**
- * Sync a recipe's stack memberships.
- * Sets the recipe to be in exactly the specified stacks.
+ * Sync a recipe's collection memberships.
+ * Sets the recipe to be in exactly the specified collections.
  */
-export async function syncRecipeStacks(
+export async function syncRecipeCollections(
   recipeId: string,
-  stackIds: string[]
+  collectionIds: string[]
 ): Promise<DbResult<void>> {
   const supabase = await createClient();
 
-  // Get current stack memberships
+  // Get current collection memberships
   const { data: current, error: fetchError } = await supabase
     .from("recipe_stacks")
     .select("stack_id")
     .eq("recipe_id", recipeId);
 
   if (fetchError) {
-    console.error("Error fetching current stacks:", fetchError);
+    console.error("Error fetching current collections:", fetchError);
     return { success: false, error: fetchError.message };
   }
 
   const currentIds = new Set((current || []).map((r) => r.stack_id));
-  const targetIds = new Set(stackIds);
+  const targetIds = new Set(collectionIds);
 
   // Determine what to add and remove
-  const toAdd = stackIds.filter((id) => !currentIds.has(id));
+  const toAdd = collectionIds.filter((id) => !currentIds.has(id));
   const toRemove = [...currentIds].filter((id) => !targetIds.has(id));
 
   // Remove old memberships
@@ -338,7 +338,7 @@ export async function syncRecipeStacks(
       .in("stack_id", toRemove);
 
     if (removeError) {
-      console.error("Error removing stacks:", removeError);
+      console.error("Error removing collections:", removeError);
       return { success: false, error: removeError.message };
     }
   }
@@ -346,14 +346,14 @@ export async function syncRecipeStacks(
   // Add new memberships
   if (toAdd.length > 0) {
     const { error: addError } = await supabase.from("recipe_stacks").insert(
-      toAdd.map((stackId) => ({
+      toAdd.map((collectionId) => ({
         recipe_id: recipeId,
-        stack_id: stackId,
+        stack_id: collectionId,
       }))
     );
 
     if (addError) {
-      console.error("Error adding stacks:", addError);
+      console.error("Error adding collections:", addError);
       return { success: false, error: addError.message };
     }
   }
@@ -362,11 +362,11 @@ export async function syncRecipeStacks(
 }
 
 /**
- * Get stacks that contain a specific recipe.
+ * Get collections that contain a specific recipe.
  */
-export async function getStacksForRecipe(
+export async function getCollectionsForRecipe(
   recipeId: string
-): Promise<DbResult<Stack[]>> {
+): Promise<DbResult<Collection[]>> {
   const supabase = await createClient();
 
   const { data: recipeStacks, error: rsError } = await supabase
@@ -375,7 +375,7 @@ export async function getStacksForRecipe(
     .eq("recipe_id", recipeId);
 
   if (rsError) {
-    console.error("Error getting stacks for recipe:", rsError);
+    console.error("Error getting collections for recipe:", rsError);
     return { success: false, error: rsError.message };
   }
 
@@ -383,21 +383,21 @@ export async function getStacksForRecipe(
     return { success: true, data: [] };
   }
 
-  const stackIds = recipeStacks.map((rs) => rs.stack_id);
+  const collectionIds = recipeStacks.map((rs) => rs.stack_id);
 
-  const { data: stacks, error: stacksError } = await supabase
+  const { data: collections, error: collectionsError } = await supabase
     .from("stacks")
     .select("*")
-    .in("id", stackIds)
+    .in("id", collectionIds)
     .order("name", { ascending: true });
 
-  if (stacksError) {
-    console.error("Error getting stacks:", stacksError);
-    return { success: false, error: stacksError.message };
+  if (collectionsError) {
+    console.error("Error getting collections:", collectionsError);
+    return { success: false, error: collectionsError.message };
   }
 
   return {
     success: true,
-    data: (stacks || []).map(transformStackRow),
+    data: (collections || []).map(transformCollectionRow),
   };
 }

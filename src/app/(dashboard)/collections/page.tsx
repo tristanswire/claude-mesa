@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { listStacks } from "@/lib/db/stacks";
+import { listCollections } from "@/lib/db/collections";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 
-export default async function StacksPage() {
-  const result = await listStacks();
+export default async function CollectionsPage() {
+  const result = await listCollections();
 
   return (
     <div>
       <PageHeader
-        title="Stacks"
+        title="Collections"
         description={
           result.success && result.data.length > 0
             ? `${result.data.length} collection${result.data.length === 1 ? "" : "s"} to organize your recipes`
@@ -18,16 +18,16 @@ export default async function StacksPage() {
         }
         actions={
           <Button asChild>
-            <Link href="/stacks/new">New Stack</Link>
+            <Link href="/collections/new">New Collection</Link>
           </Button>
         }
       />
 
       {!result.success ? (
         <ErrorState
-          title="Failed to load stacks"
+          title="Failed to load collections"
           message={result.error}
-          retry={{ label: "Try again", href: "/stacks" }}
+          retry={{ label: "Try again", href: "/collections" }}
         />
       ) : result.data.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -49,13 +49,13 @@ export default async function StacksPage() {
                 </svg>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Organize with stacks
+                Organize with collections
               </h2>
               <p className="text-muted text-lg mb-6">
-                Stacks are collections that help you group recipes by theme, meal type, or occasion. Think of them like playlists for your recipes.
+                Collections help you group recipes by theme, meal type, or occasion. Think of them like playlists for your recipes.
               </p>
 
-              {/* Example stacks */}
+              {/* Example collections */}
               <div className="flex flex-wrap gap-2 mb-8">
                 <span className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full">
                   Weeknight Dinners
@@ -72,7 +72,7 @@ export default async function StacksPage() {
               </div>
 
               <Button size="lg" asChild>
-                <Link href="/stacks/new" className="gap-2">
+                <Link href="/collections/new" className="gap-2">
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -86,7 +86,7 @@ export default async function StacksPage() {
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  Create Your First Stack
+                  Create Your First Collection
                 </Link>
               </Button>
             </div>
@@ -94,13 +94,13 @@ export default async function StacksPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {result.data.map((stack) => (
+          {result.data.map((collection) => (
             <Link
-              key={stack.id}
-              href={`/stacks/${stack.id}`}
+              key={collection.id}
+              href={`/collections/${collection.id}`}
               className="group block bg-surface rounded-xl border border-border shadow-sm p-6 hover:shadow-md transition-all duration-200 cursor-pointer"
             >
-              {/* Stack icon */}
+              {/* Collection icon */}
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
                 <svg
                   className="w-6 h-6"
@@ -118,17 +118,17 @@ export default async function StacksPage() {
               </div>
 
               <h2 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                {stack.name}
+                {collection.name}
               </h2>
 
-              {stack.description && (
+              {collection.description && (
                 <p className="text-sm text-muted line-clamp-2 mb-3">
-                  {stack.description}
+                  {collection.description}
                 </p>
               )}
 
               <p className="text-sm text-muted">
-                {stack.recipeCount} {stack.recipeCount === 1 ? "recipe" : "recipes"}
+                {collection.recipeCount} {collection.recipeCount === 1 ? "recipe" : "recipes"}
               </p>
             </Link>
           ))}

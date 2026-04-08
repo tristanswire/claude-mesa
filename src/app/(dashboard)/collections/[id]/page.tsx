@@ -1,54 +1,54 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getStackById, listRecipesForStack } from "@/lib/db/stacks";
-import { DeleteStackButton } from "@/components/stack/DeleteStackButton";
-import { RemoveFromStackButton } from "@/components/stack/RemoveFromStackButton";
+import { getCollectionById, listRecipesForCollection } from "@/lib/db/collections";
+import { DeleteCollectionButton } from "@/components/collection/DeleteCollectionButton";
+import { RemoveFromCollectionButton } from "@/components/collection/RemoveFromCollectionButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { RecipeCard } from "@/components/recipe/RecipeCard";
 
-interface StackDetailPageProps {
+interface CollectionDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function StackDetailPage({ params }: StackDetailPageProps) {
+export default async function CollectionDetailPage({ params }: CollectionDetailPageProps) {
   const { id } = await params;
 
-  const [stackResult, recipesResult] = await Promise.all([
-    getStackById(id),
-    listRecipesForStack(id),
+  const [collectionResult, recipesResult] = await Promise.all([
+    getCollectionById(id),
+    listRecipesForCollection(id),
   ]);
 
-  if (!stackResult.success) {
-    if (stackResult.error === "Stack not found") {
+  if (!collectionResult.success) {
+    if (collectionResult.error === "Collection not found") {
       notFound();
     }
     return (
       <ErrorState
-        title="Failed to load stack"
-        message={stackResult.error}
-        retry={{ label: "Go back to stacks", href: "/stacks" }}
+        title="Failed to load collection"
+        message={collectionResult.error}
+        retry={{ label: "Go back to collections", href: "/collections" }}
       />
     );
   }
 
-  const stack = stackResult.data;
+  const collection = collectionResult.data;
   const recipes = recipesResult.success ? recipesResult.data : [];
 
   return (
     <div>
       <PageHeader
-        title={stack.name}
-        description={stack.description}
-        backLink={{ href: "/stacks", label: "Back to stacks" }}
+        title={collection.name}
+        description={collection.description}
+        backLink={{ href: "/collections", label: "Back to collections" }}
         actions={
           <div className="flex items-center gap-3">
             <Button variant="outline" asChild>
-              <Link href={`/stacks/${stack.id}/edit`}>Edit</Link>
+              <Link href={`/collections/${collection.id}/edit`}>Edit</Link>
             </Button>
-            <DeleteStackButton stackId={stack.id} />
+            <DeleteCollectionButton collectionId={collection.id} />
           </div>
         }
       />
@@ -86,7 +86,7 @@ export default async function StackDetailPage({ params }: StackDetailPageProps) 
       {recipes.length === 0 ? (
         <EmptyState
           icon="recipe"
-          title="No recipes in this stack"
+          title="No recipes in this collection"
           description="Add recipes to this collection from any recipe's detail page."
           action={{ label: "Browse Recipes", href: "/recipes" }}
         />
@@ -96,9 +96,9 @@ export default async function StackDetailPage({ params }: StackDetailPageProps) 
             <div key={recipe.id} className="relative group">
               <RecipeCard recipe={recipe} />
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <RemoveFromStackButton
+                <RemoveFromCollectionButton
                   recipeId={recipe.id}
-                  stackId={stack.id}
+                  collectionId={collection.id}
                 />
               </div>
             </div>

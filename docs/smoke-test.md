@@ -100,45 +100,45 @@ Run this checklist after each deployment (production and preview) to verify core
 
 ---
 
-## 4. Stacks
+## 4. Collections
 
-### Create Stack
-- [ ] Navigate to `/stacks/new`
+### Create Collection
+- [ ] Navigate to `/collections/new`
 - [ ] Enter name and description
-- [ ] Click "Create Stack"
-- [ ] **Expected:** Redirected to `/stacks/[id]`, stack displays
+- [ ] Click "Create Collection"
+- [ ] **Expected:** Redirected to `/collections/[id]`, collection displays
 
-### Add Recipe to Stack
+### Add Recipe to Collection
 - [ ] Navigate to `/recipes/[id]`
-- [ ] Click "Stacks" button
-- [ ] Toggle a stack checkbox ON
+- [ ] Click "Collections" button
+- [ ] Toggle a collection checkbox ON
 - [ ] Close modal
-- [ ] Navigate to that stack
-- [ ] **Expected:** Recipe appears in stack
+- [ ] Navigate to that collection
+- [ ] **Expected:** Recipe appears in collection
 
-### Remove Recipe from Stack
-- [ ] Navigate to stack detail `/stacks/[id]`
+### Remove Recipe from Collection
+- [ ] Navigate to collection detail `/collections/[id]`
 - [ ] Hover over a recipe card
 - [ ] Click remove button (X)
-- [ ] **Expected:** Recipe removed from stack immediately
+- [ ] **Expected:** Recipe removed from collection immediately
 
-### Edit Stack
-- [ ] Navigate to `/stacks/[id]`
+### Edit Collection
+- [ ] Navigate to `/collections/[id]`
 - [ ] Click "Edit" button
 - [ ] Modify name
 - [ ] Click "Save Changes"
-- [ ] **Expected:** Stack name updated immediately
+- [ ] **Expected:** Collection name updated immediately
 
-### Delete Stack
-- [ ] Navigate to `/stacks/[id]`
+### Delete Collection
+- [ ] Navigate to `/collections/[id]`
 - [ ] Click "Delete" button
 - [ ] Confirm deletion
-- [ ] **Expected:** Redirected to `/stacks`, stack no longer in list
+- [ ] **Expected:** Redirected to `/collections`, collection no longer in list
 
-### Stack List
-- [ ] Navigate to `/stacks`
-- [ ] **Expected:** All stacks display with recipe counts
-- [ ] Empty state explains what stacks are
+### Collection List
+- [ ] Navigate to `/collections`
+- [ ] **Expected:** All collections display with recipe counts
+- [ ] Empty state explains what collections are
 
 ---
 

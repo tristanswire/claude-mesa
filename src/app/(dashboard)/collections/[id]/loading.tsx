@@ -1,6 +1,6 @@
 import { LoadingState } from "@/components/ui/LoadingState";
 
-export default function StackDetailLoading() {
+export default function CollectionDetailLoading() {
   return (
     <div>
       <div className="flex justify-between items-start mb-6">
@@ -13,7 +13,7 @@ export default function StackDetailLoading() {
           <div className="h-10 w-20 bg-surface-2 rounded animate-pulse" />
         </div>
       </div>
-      <LoadingState message="Loading stack..." />
+      <LoadingState message="Loading collection..." />
     </div>
   );
 }

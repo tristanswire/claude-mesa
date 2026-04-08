@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getRecipeById } from "@/lib/db/recipes";
 import { getCachedPreferences } from "@/lib/db/cached";
-import { listStacks, getStacksForRecipe } from "@/lib/db/stacks";
+import { listCollections, getCollectionsForRecipe } from "@/lib/db/collections";
 import { getActiveShareForRecipe } from "@/lib/db/recipe-shares";
 import { RecipeDetailView } from "@/components/recipe/RecipeDetailView";
 import { ShopThisRecipe } from "@/components/recipe/ShopThisRecipe";
@@ -68,11 +68,11 @@ export default async function RecipeDetailPage({
   }
 
   // Recipe loaded successfully - fetch related data in parallel
-  const [preferencesResult, allStacksResult, recipeStacksResult, shareResult] =
+  const [preferencesResult, allCollectionsResult, recipeCollectionsResult, shareResult] =
     await Promise.all([
       getCachedPreferences(), // Cached - deduplicates with layout fetch
-      listStacks(),
-      getStacksForRecipe(id),
+      listCollections(),
+      getCollectionsForRecipe(id),
       getActiveShareForRecipe(id),
     ]);
 
@@ -80,8 +80,8 @@ export default async function RecipeDetailPage({
   const unitSystem = preferencesResult.success
     ? preferencesResult.data.preferredUnitSystem
     : "original";
-  const allStacks = allStacksResult.success ? allStacksResult.data : [];
-  const currentStacks = recipeStacksResult.success ? recipeStacksResult.data : [];
+  const allCollections = allCollectionsResult.success ? allCollectionsResult.data : [];
+  const currentCollections = recipeCollectionsResult.success ? recipeCollectionsResult.data : [];
   const activeShare = shareResult.success ? shareResult.data : null;
 
   return (
@@ -89,8 +89,8 @@ export default async function RecipeDetailPage({
       <RecipeDetailView
         recipe={recipe}
         initialUnitSystem={unitSystem}
-        allStacks={allStacks}
-        currentStacks={currentStacks}
+        allCollections={allCollections}
+        currentCollections={currentCollections}
         initialShareToken={activeShare?.token}
         initialShareId={activeShare?.id}
       />

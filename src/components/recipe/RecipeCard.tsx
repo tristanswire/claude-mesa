@@ -5,11 +5,11 @@ import { Chip } from "@/components/ui/Badge";
 
 interface RecipeCardProps {
   recipe: Recipe;
-  stacks?: { id: string; name: string }[];
+  collections?: { id: string; name: string }[];
   href?: string;
 }
 
-export function RecipeCard({ recipe, stacks = [], href }: RecipeCardProps) {
+export function RecipeCard({ recipe, collections = [], href }: RecipeCardProps) {
   const linkHref = href || `/recipes/${recipe.id}`;
 
   // Format time display
@@ -105,17 +105,17 @@ export function RecipeCard({ recipe, stacks = [], href }: RecipeCardProps) {
           </span>
         </div>
 
-        {/* Stack chips */}
-        {stacks.length > 0 && (
+        {/* Collection chips */}
+        {collections.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {stacks.slice(0, 3).map((stack) => (
-              <Chip key={stack.id} size="sm">
-                {stack.name}
+            {collections.slice(0, 3).map((collection) => (
+              <Chip key={collection.id} size="sm">
+                {collection.name}
               </Chip>
             ))}
-            {stacks.length > 3 && (
+            {collections.length > 3 && (
               <Chip size="sm" variant="secondary">
-                +{stacks.length - 3}
+                +{collections.length - 3}
               </Chip>
             )}
           </div>

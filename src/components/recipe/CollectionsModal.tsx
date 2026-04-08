@@ -2,39 +2,39 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
-import type { Stack } from "@/lib/db/stacks";
-import { syncRecipeStacksAction } from "@/lib/actions/stacks";
+import type { Collection } from "@/lib/db/collections";
+import { syncRecipeCollectionsAction } from "@/lib/actions/collections";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 
-interface StacksModalProps {
+interface CollectionsModalProps {
   recipeId: string;
-  currentStacks: Stack[];
-  allStacks: Stack[];
+  currentCollections: Collection[];
+  allCollections: Collection[];
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function StacksModal({
+export function CollectionsModal({
   recipeId,
-  currentStacks,
-  allStacks,
+  currentCollections,
+  allCollections,
   isOpen,
   onClose,
-}: StacksModalProps) {
+}: CollectionsModalProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Initialize selected stacks when modal opens
+  // Initialize selected collections when modal opens
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isOpen) {
-      setSelectedIds(new Set(currentStacks.map((s) => s.id)));
+      setSelectedIds(new Set(currentCollections.map((c) => c.id)));
       setError(null);
     }
-  }, [isOpen, currentStacks]);
+  }, [isOpen, currentCollections]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Handle escape key and click outside
@@ -60,13 +60,13 @@ export function StacksModal({
     };
   }, [isOpen, onClose]);
 
-  const handleToggle = (stackId: string) => {
+  const handleToggle = (collectionId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(stackId)) {
-        next.delete(stackId);
+      if (next.has(collectionId)) {
+        next.delete(collectionId);
       } else {
-        next.add(stackId);
+        next.add(collectionId);
       }
       return next;
     });
@@ -75,12 +75,12 @@ export function StacksModal({
   const handleSave = () => {
     setError(null);
     startTransition(async () => {
-      const result = await syncRecipeStacksAction(
+      const result = await syncRecipeCollectionsAction(
         recipeId,
         Array.from(selectedIds)
       );
       if (!result.success) {
-        setError(result.error || "Failed to update stacks");
+        setError(result.error || "Failed to update collections");
       } else {
         onClose();
       }
@@ -102,7 +102,7 @@ export function StacksModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            Add to stacks
+            Add to collections
           </h2>
         </div>
 
@@ -114,34 +114,34 @@ export function StacksModal({
             </div>
           )}
 
-          {allStacks.length === 0 ? (
+          {allCollections.length === 0 ? (
             <div className="text-center py-6">
-              <p className="text-muted mb-4">No stacks yet.</p>
+              <p className="text-muted mb-4">No collections yet.</p>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/stacks/new">Create your first stack</Link>
+                <Link href="/collections/new">Create your first collection</Link>
               </Button>
             </div>
           ) : (
             <div className="space-y-2">
-              {allStacks.map((stack) => (
+              {allCollections.map((collection) => (
                 <label
-                  key={stack.id}
+                  key={collection.id}
                   className={`flex items-center gap-3 p-3 rounded-lg hover:bg-surface-2 transition-colors ${
                     isPending ? "cursor-not-allowed" : "cursor-pointer"
                   }`}
                 >
                   <Checkbox
-                    checked={selectedIds.has(stack.id)}
-                    onChange={() => handleToggle(stack.id)}
+                    checked={selectedIds.has(collection.id)}
+                    onChange={() => handleToggle(collection.id)}
                     disabled={isPending}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-foreground truncate">
-                      {stack.name}
+                      {collection.name}
                     </div>
-                    {stack.description && (
+                    {collection.description && (
                       <div className="text-sm text-muted truncate">
-                        {stack.description}
+                        {collection.description}
                       </div>
                     )}
                   </div>

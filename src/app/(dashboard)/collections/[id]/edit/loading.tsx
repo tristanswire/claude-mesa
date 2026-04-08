@@ -1,6 +1,6 @@
 import { LoadingState } from "@/components/ui/LoadingState";
 
-export default function EditStackLoading() {
+export default function EditCollectionLoading() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-6">
@@ -8,7 +8,7 @@ export default function EditStackLoading() {
         <div className="h-8 w-32 bg-surface-2 rounded animate-pulse" />
       </div>
 
-      <LoadingState message="Loading stack..." />
+      <LoadingState message="Loading collection..." />
     </div>
   );
 }

@@ -1,24 +1,24 @@
 "use client";
 
 import { useTransition } from "react";
-import { removeRecipeFromStackAction } from "@/lib/actions/stacks";
+import { removeRecipeFromCollectionAction } from "@/lib/actions/collections";
 
-interface RemoveFromStackButtonProps {
+interface RemoveFromCollectionButtonProps {
   recipeId: string;
-  stackId: string;
+  collectionId: string;
 }
 
-export function RemoveFromStackButton({
+export function RemoveFromCollectionButton({
   recipeId,
-  stackId,
-}: RemoveFromStackButtonProps) {
+  collectionId,
+}: RemoveFromCollectionButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
-      await removeRecipeFromStackAction(recipeId, stackId);
+      await removeRecipeFromCollectionAction(recipeId, collectionId);
     });
   };
 

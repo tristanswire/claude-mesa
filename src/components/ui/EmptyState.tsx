@@ -2,12 +2,13 @@
  * Reusable empty state component with icon and CTA.
  */
 
+import type React from "react";
 import Link from "next/link";
 
 interface EmptyStateProps {
   title: string;
   description?: string;
-  icon?: "recipe" | "stack" | "import" | "store";
+  icon?: "recipe" | "collection" | "import" | "store";
   action?: {
     label: string;
     href: string;
@@ -18,7 +19,7 @@ interface EmptyStateProps {
   };
 }
 
-const icons = {
+const icons: Record<string, React.ReactNode> = {
   recipe: (
     <svg
       className="h-12 w-12 text-muted"
@@ -34,7 +35,7 @@ const icons = {
       />
     </svg>
   ),
-  stack: (
+  collection: (
     <svg
       className="h-12 w-12 text-muted"
       fill="none"

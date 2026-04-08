@@ -3,10 +3,10 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import type { FormState } from "@/lib/actions/stacks";
+import type { FormState } from "@/lib/actions/collections";
 
-interface StackFormProps {
-  stack?: {
+interface CollectionFormProps {
+  collection?: {
     id: string;
     name: string;
     description?: string;
@@ -15,7 +15,7 @@ interface StackFormProps {
   submitLabel: string;
 }
 
-export function StackForm({ stack, action, submitLabel }: StackFormProps) {
+export function CollectionForm({ collection, action, submitLabel }: CollectionFormProps) {
   const [state, formAction, isPending] = useActionState(action, {
     success: true,
   });
@@ -40,7 +40,7 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
           id="name"
           name="name"
           required
-          defaultValue={stack?.name}
+          defaultValue={collection?.name}
           placeholder="e.g., Breakfast, Quick Dinners, Holiday Favorites"
           className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
         />
@@ -57,15 +57,15 @@ export function StackForm({ stack, action, submitLabel }: StackFormProps) {
           id="description"
           name="description"
           rows={3}
-          defaultValue={stack?.description || ""}
-          placeholder="Optional description for this stack"
+          defaultValue={collection?.description || ""}
+          placeholder="Optional description for this collection"
           className="mt-1 block w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
         />
       </div>
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" asChild>
-          <Link href={stack ? `/stacks/${stack.id}` : "/stacks"}>Cancel</Link>
+          <Link href={collection ? `/collections/${collection.id}` : "/collections"}>Cancel</Link>
         </Button>
         <Button type="submit" disabled={isPending} isLoading={isPending}>
           {isPending ? "Saving..." : submitLabel}

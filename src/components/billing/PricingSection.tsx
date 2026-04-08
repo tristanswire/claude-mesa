@@ -33,7 +33,7 @@ export function PricingSection({
       features: [
         "Up to 25 recipes",
         "Basic URL and text import",
-        "Stacks (collections)",
+        "Collections",
         "Recipe sharing",
         "Light and dark mode",
       ],
@@ -49,7 +49,7 @@ export function PricingSection({
       features: [
         "Unlimited recipes",
         "All import types",
-        "Unlimited stacks",
+        "Unlimited collections",
         "Recipe sharing",
         "Priority support",
         "Early access to new features",

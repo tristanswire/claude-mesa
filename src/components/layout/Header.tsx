@@ -59,14 +59,14 @@ export function Header({ userEmail, firstName }: HeaderProps) {
                 Recipes
               </Link>
               <Link
-                href="/stacks"
+                href="/collections"
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive("/stacks")
+                  isActive("/collections")
                     ? "bg-primary-subtle text-primary"
                     : "text-muted hover:text-foreground hover:bg-surface-2"
                 }`}
               >
-                Stacks
+                Collections
               </Link>
               <Link
                 href="/store"

@@ -1,20 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { deleteStackAction } from "@/lib/actions/stacks";
+import { deleteCollectionAction } from "@/lib/actions/collections";
 import { Button } from "@/components/ui/Button";
 
-interface DeleteStackButtonProps {
-  stackId: string;
+interface DeleteCollectionButtonProps {
+  collectionId: string;
 }
 
-export function DeleteStackButton({ stackId }: DeleteStackButtonProps) {
+export function DeleteCollectionButton({ collectionId }: DeleteCollectionButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = () => {
     startTransition(async () => {
-      await deleteStackAction(stackId);
+      await deleteCollectionAction(collectionId);
     });
   };
 
