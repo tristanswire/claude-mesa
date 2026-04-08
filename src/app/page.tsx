@@ -40,7 +40,6 @@ export default async function HomePage() {
             {[
               { label: "How It Works", href: "#how-it-works" },
               { label: "Why Mesa",     href: "#why-mesa" },
-              { label: "For Families", href: "#for-families" },
               { label: "Features",     href: "#features" },
               { label: "Pricing",      href: "#pricing" },
               { label: "FAQ",          href: "#faq" },
